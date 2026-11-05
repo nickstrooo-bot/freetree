@@ -133,9 +133,10 @@ export const emailCaptureRouter = router({
 
     const hasMore = rows.length > input.limit;
     const page = hasMore ? rows.slice(0, input.limit) : rows;
+    const last = page[page.length - 1];
     return {
       subscribers: page.map(toSubscriberRow),
-      nextCursor: hasMore ? page[page.length - 1].id : null,
+      nextCursor: hasMore && last ? last.id : null,
     };
   }),
 

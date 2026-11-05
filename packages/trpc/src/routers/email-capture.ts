@@ -56,26 +56,27 @@ const listSubscribersInput = z.object({
 export const emailCaptureRouter = router({
   // ── Owner: block configuration ──────────────────────────────────────────
 
-  getBlock: kyteProcedure.input(kyteIdInput).query(async () => {
+  getBlock: kyteProcedure.input(kyteIdInput).output(z.object({ block: emailCaptureBlockSchema.nullable() })).query(async () => {
     throw notImplemented("emailCapture.getBlock");
   }),
 
-  upsertBlock: kyteProcedure.input(upsertBlockInput).mutation(async () => {
+  upsertBlock: kyteProcedure.input(upsertBlockInput).output(emailCaptureBlockSchema).mutation(async () => {
     throw notImplemented("emailCapture.upsertBlock");
   }),
 
-  deleteBlock: kyteProcedure.input(kyteIdInput).mutation(async () => {
+  deleteBlock: kyteProcedure.input(kyteIdInput).output(okSchema).mutation(async () => {
     throw notImplemented("emailCapture.deleteBlock");
   }),
 
   // ── Owner: subscriber management ────────────────────────────────────────
 
-  listSubscribers: kyteProcedure.input(listSubscribersInput).query(async () => {
+  listSubscribers: kyteProcedure.input(listSubscribersInput).output(z.object({ subscribers: z.array(emailSubscriberSchema), nextCursor: z.string().nullable() })).query(async () => {
     throw notImplemented("emailCapture.listSubscribers");
   }),
 
   deleteSubscriber: kyteProcedure
     .input(z.object({ kyteId: z.string().min(1), subscriberId: z.string().min(1) }))
+    .output(okSchema)
     .mutation(async () => {
       throw notImplemented("emailCapture.deleteSubscriber");
     }),
@@ -83,7 +84,7 @@ export const emailCaptureRouter = router({
   // ── Owner: CSV export ───────────────────────────────────────────────────
   // Returns { csv, filename }. The web client triggers a download.
 
-  exportCsv: kyteProcedure.input(kyteIdInput).query(async () => {
+  exportCsv: kyteProcedure.input(kyteIdInput).output(z.object({ csv: z.string(), filename: z.string() })).query(async () => {
     throw notImplemented("emailCapture.exportCsv");
   }),
 });
