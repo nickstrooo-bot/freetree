@@ -1,18 +1,17 @@
 #!/usr/bin/env node
-// FreeTree Railway DB repair (Nov 5 2026, v3 — idempotent).
+// FreeTree Railway DB repair (Nov 5 2026, v4 — idempotent).
 // Repairs the failed 20261105000000_promo_codes_booking_blocks migration.
 // Root cause: five models (Product, Purchase, StripeConnectAccount,
 // EmailCaptureBlock, EmailSubscriber) never got CREATE TABLE migrations upstream,
 // so the promo/booking ALTER failed with `relation "Product" does not exist`.
-// Fixed by the new 20261104000000_create_missing_commerce_tables migration,
-// which sorts before it and creates the tables first.
+// Fixed by migration 20261104000000_create_missing_commerce_tables, which sorts
+// before it and creates the tables first.
 //
-// This script is safe to run on every container start:
-//   1. If the promo/booking migration is currently FAILED, resolve it based on
-//      ground truth (3/3 columns exist -> --applied; 0/3 -> --rolled-back;
-//      partial -> refuse). If it is not failed, skip the resolve.
-//   2. Run `migrate deploy` (applies anything pending; no-op when up to date).
-//   3. Verify the 3 columns exist; exit 0 only then.
+// v4 change: DO NOT trust `prisma migrate status` text to detect the failed
+// migration — its output omits the failed section when a pending migration
+// also exists. Instead, query _prisma_migrations directly: a row with
+// finished_at NULL means the migration is currently failed. Safe to run on
+// every container start.
 import { spawnSync } from "node:child_process";
 
 const MIGRATION = "20261105000000_promo_codes_booking_blocks";
@@ -30,21 +29,30 @@ function fail(msg) {
   process.exit(1);
 }
 
+function sql(query) {
+  const r = prisma(["db", "execute", "--schema", SCHEMA, "--stdin"], query);
+  return r;
+}
+
 function countColumns() {
-  const sql = `SELECT table_name, column_name FROM information_schema.columns WHERE table_name IN ('Product','Kyte','PublishedKyte') AND column_name IN ('allowPromoCodes','bookingBlocks') ORDER BY 1, 2;`;
-  const r = prisma(["db", "execute", "--schema", SCHEMA, "--stdin"], sql);
+  const r = sql(
+    `SELECT table_name, column_name FROM information_schema.columns WHERE table_name IN ('Product','Kyte','PublishedKyte') AND column_name IN ('allowPromoCodes','bookingBlocks') ORDER BY 1, 2;`,
+  );
   process.stdout.write(r.stdout ?? "");
   process.stderr.write(r.stderr ?? "");
   if (r.status !== 0) fail("column check failed — cannot determine migration state");
   return (r.stdout.match(/allowPromoCodes|bookingBlocks/g) ?? []).length;
 }
 
-console.log("─── railway-db-fix: migration status ───");
-const status = prisma(["migrate", "status", "--schema", SCHEMA]);
-process.stdout.write(status.stdout ?? "");
-process.stderr.write(status.stderr ?? "");
-const statusText = `${status.stdout ?? ""}\n${status.stderr ?? ""}`;
-const isFailed = statusText.includes("have failed") && statusText.includes(MIGRATION);
+console.log("─── railway-db-fix: is the migration currently failed? (direct DB check) ───");
+const failedCheck = sql(
+  `SELECT 'MIGRATION_FAILED_MARKER' AS m WHERE EXISTS (SELECT 1 FROM _prisma_migrations WHERE migration_name = '${MIGRATION}' AND finished_at IS NULL);`,
+);
+process.stdout.write(failedCheck.stdout ?? "");
+process.stderr.write(failedCheck.stderr ?? "");
+if (failedCheck.status !== 0) fail("failed-state check failed");
+const isFailed = (failedCheck.stdout ?? "").includes("MIGRATION_FAILED_MARKER");
+console.log(`\nMigration ${MIGRATION} failed: ${isFailed}`);
 
 if (isFailed) {
   console.log(`\n─── railway-db-fix: ${MIGRATION} is FAILED — inspecting ground truth ───`);
