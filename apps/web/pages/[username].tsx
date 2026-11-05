@@ -1,0 +1,113 @@
+import type { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from "next";
+import { getCdnUrl } from "@kytelink/cdn";
+import { isSelfRedirect, prefixHttps, type ProfileContent } from "@kytelink/schemas";
+import type { PublicProduct, PublicEmailCaptureBlock } from "@kytelink/ui";
+import { PublicProfile } from "../components/profile/public-profile";
+import { BlockedShell } from "../components/profile/blocked-shell";
+import { ProfileHead } from "../components/seo/profile-head";
+import { fetchPublishedProfile } from "../lib/api/profile-fetch";
+import { fetchPublicProducts } from "../lib/api/products-fetch";
+import { fetchPublicEmailCapture } from "../lib/api/email-capture-fetch";
+import { appealUrl } from "../consts/appeal";
+
+
+type PageProps =
+  | { kind: "blocked"; reason: string | null; appealHref: string }
+  | {
+      kind: "profile";
+      username: string;
+      kyteId: string | null;
+      content: ProfileContent;
+      ogImageUrl: string | null;
+      avatarUrl: string | null;
+      publishedAt: string | null;
+      products: PublicProduct[];
+      checkoutEnabled: boolean;
+      emailCaptureBlock: PublicEmailCaptureBlock | null;
+    };
+
+export const getStaticPaths: GetStaticPaths = () => {
+  return { paths: [], fallback: "blocking" };
+};
+
+const REVALIDATE_SECONDS = 300;
+
+export const getStaticProps: GetStaticProps<PageProps> = async (context) => {
+  const raw = context.params?.username;
+  const username = (Array.isArray(raw) ? raw[0] : raw)?.toLowerCase();
+  if (!username) return { notFound: true };
+
+  const result = await fetchPublishedProfile(username);
+  if (result.status === "NOT_FOUND" || !result.content) {
+    return { notFound: true, revalidate: REVALIDATE_SECONDS };
+  }
+
+  if (result.status === "SUSPENDED") {
+    return {
+      props: {
+        kind: "blocked",
+        reason: result.suspensionReason,
+        appealHref: appealUrl("kyte", username),
+      },
+      revalidate: REVALIDATE_SECONDS,
+    };
+  }
+
+  if (result.content.shouldRedirect && result.content.redirectUrl) {
+    const destination = prefixHttps(result.content.redirectUrl);
+    if (!isSelfRedirect({ redirectUrl: destination, username })) {
+      return { redirect: { destination, permanent: false }, revalidate: REVALIDATE_SECONDS };
+    }
+  }
+
+  const avatarUrl = result.content.avatar?.url ? getCdnUrl(result.content.avatar.url) : null;
+
+  // Best-effort: commerce and email capture must never break the profile page.
+  const { products, checkoutEnabled } = await fetchPublicProducts(username);
+  const { block: emailCaptureBlock } = await fetchPublicEmailCapture(username);
+
+  return {
+    props: {
+      kind: "profile",
+      username,
+      kyteId: result.kyteId,
+      content: result.content,
+      ogImageUrl: result.ogImageUrl,
+      avatarUrl,
+      publishedAt: result.publishedAt,
+      products,
+      checkoutEnabled,
+      emailCaptureBlock,
+    },
+    revalidate: REVALIDATE_SECONDS,
+  };
+};
+
+function ProfilePage(props: InferGetStaticPropsType<typeof getStaticProps>) {
+  if (props.kind === "blocked") {
+    return <BlockedShell reason={props.reason} appealHref={props.appealHref} />;
+  }
+  return (
+    <>
+      <ProfileHead
+        username={props.username}
+        content={props.content}
+        ogImageUrl={props.ogImageUrl}
+        avatarUrl={props.avatarUrl}
+        dateModified={props.publishedAt}
+      />
+      <PublicProfile
+        content={props.content}
+        username={props.username}
+        kyteId={props.kyteId}
+        products={props.products}
+        checkoutEnabled={props.checkoutEnabled}
+        emailCaptureBlock={props.emailCaptureBlock}
+      />
+    </>
+  );
+}
+
+ProfilePage.bare = true;
+
+export default ProfilePage;

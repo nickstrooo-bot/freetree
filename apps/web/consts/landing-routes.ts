@@ -1,0 +1,20 @@
+import { publicLandingUrl } from "../lib/env";
+
+export const MARKETING_ROUTE_PREFIXES = [
+  "features",
+  "use-cases",
+  "compare",
+  "pricing",
+  "legal",
+  "terms-of-service",
+  "privacy-policy",
+  "anti-phishing",
+  "self-hosting",
+  "about",
+  "contact",
+  "report",
+  "appeal",
+  "landing-assets",
+] as const;
+
+export const LANDING_ORIGIN = publicLandingUrl();

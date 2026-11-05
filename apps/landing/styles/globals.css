@@ -1,0 +1,145 @@
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
+:root {
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  background: #ffffff;
+  color: #141419;
+  font-family: var(--font-sans);
+  overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*:focus,
+*:focus-visible {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes report-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* FreeTree metallic buttons — brushed metal over deep green (#1B4332) */
+/* ------------------------------------------------------------------ */
+.btn-metal {
+  position: relative;
+  color: #ffffff;
+  background:
+    /* brushed-metal sheen: diagonal light streaks */
+    linear-gradient(
+      115deg,
+      rgba(255, 255, 255, 0.16) 0%,
+      rgba(255, 255, 255, 0.03) 28%,
+      rgba(255, 255, 255, 0.11) 52%,
+      rgba(255, 255, 255, 0.02) 78%,
+      rgba(255, 255, 255, 0.07) 100%
+    ),
+    /* depth: dark base fading up to a lit top edge */
+    linear-gradient(180deg, #35795a 0%, #1b4332 46%, #0f2a1f 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.28),
+    inset 1px 0 0 rgba(255, 255, 255, 0.08),
+    inset -1px 0 0 rgba(0, 0, 0, 0.12),
+    0 10px 28px rgba(27, 67, 50, 0.38),
+    0 2px 6px rgba(27, 67, 50, 0.22);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition:
+    filter 0.16s ease,
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.btn-metal:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.24),
+    inset 1px 0 0 rgba(255, 255, 255, 0.1),
+    inset -1px 0 0 rgba(0, 0, 0, 0.1),
+    0 14px 34px rgba(27, 67, 50, 0.44),
+    0 3px 8px rgba(27, 67, 50, 0.24);
+}
+
+.btn-metal:active {
+  transform: translateY(0);
+  filter: brightness(0.97);
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 6px 16px rgba(27, 67, 50, 0.3);
+}
+
+.btn-metal:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+/* Metallic outline variant — for secondary CTAs on dark/warm surfaces */
+.btn-metal-ghost {
+  color: #1b4332;
+  background:
+    linear-gradient(
+      115deg,
+      rgba(27, 67, 50, 0.06) 0%,
+      rgba(27, 67, 50, 0.01) 40%,
+      rgba(27, 67, 50, 0.05) 100%
+    ),
+    linear-gradient(180deg, #ffffff 0%, #fdf8f0 100%);
+  border: 1px solid rgba(27, 67, 50, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 4px 14px rgba(27, 67, 50, 0.1);
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.btn-metal-ghost:hover {
+  border-color: rgba(27, 67, 50, 0.55);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 8px 20px rgba(27, 67, 50, 0.16);
+}
+
+/* Warm workshop paper texture for soul sections */
+.paper-warm {
+  background-color: #fdf8f0;
+  background-image: radial-gradient(
+    rgba(27, 67, 50, 0.05) 1px,
+    transparent 1px
+  );
+  background-size: 22px 22px;
+}

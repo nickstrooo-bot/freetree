@@ -1,0 +1,33 @@
+// Every entry must serve a real 200: /features and /use-cases exist only as
+// /features/[slug] and /use-cases/[slug], so their index paths are absent.
+// Slug paths mirror the page files in apps/landing/pages — update both together.
+export const STATIC_SITEMAP_PATHS = [
+  "/",
+  "/about",
+  "/contact",
+  "/pricing",
+  "/self-hosting",
+  "/features/analytics",
+  "/features/custom-domains",
+  "/features/themes",
+  "/features/teams",
+  "/features/scheduled-publishing",
+  "/features/open-source",
+  "/use-cases/creators",
+  "/use-cases/musicians",
+  "/use-cases/agencies",
+  "/compare",
+  "/compare/linktree",
+  "/compare/lnk-bio",
+  "/compare/beacons",
+  "/compare/bio-link",
+  "/compare/carrd",
+  "/compare/milkshake",
+  "/compare/bio-sites",
+  "/compare/linkstack",
+  "/compare/littlelink",
+  "/legal",
+  "/terms-of-service",
+  "/privacy-policy",
+  "/anti-phishing",
+] as const;
