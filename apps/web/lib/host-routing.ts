@@ -4,12 +4,22 @@
 // middleware bundle.
 import { VANITY_PROFILE_HOSTS, normalizeProfileHost } from "@kytelink/schemas/redirect-loop";
 
+// Extra primary hosts from the environment (comma-separated) — lets a deploy
+// behind a platform domain (e.g. Railway's *.up.railway.app) serve as primary
+// instead of redirecting to the canonical domain. Inlined at build time.
+// (FreeTree test deploy, Nov 5 2026.)
+const EXTRA_PRIMARY_HOSTS = (process.env.EXTRA_PRIMARY_HOSTS ?? "")
+  .split(",")
+  .map((h) => h.trim())
+  .filter(Boolean);
+
 export const PRIMARY_HOSTS = new Set([
   "freetree.link",
   "www.freetree.link",
   "localhost:3000",
   "localhost:4000",
   "127.0.0.1:3000",
+  ...EXTRA_PRIMARY_HOSTS,
 ]);
 
 // Founder-owned short domains. Legacy parity (rewrite/01-parity.md §5): the root

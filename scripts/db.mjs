@@ -82,9 +82,14 @@ if (prod) {
     process.exit(1);
   }
 } else {
-  databaseUrl = loadEnvFile(join(root, ".env"), ".env (run `pnpm run setup` first)").DATABASE_URL;
+  // Railway-style deploys have no .env file — the database URL comes from the
+  // environment. Fall back to it when no local .env exists (FreeTree, Nov 5 2026).
+  const localEnvPath = join(root, ".env");
+  databaseUrl = existsSync(localEnvPath)
+    ? loadEnvFile(localEnvPath, ".env (run `pnpm run setup` first)").DATABASE_URL
+    : process.env.DATABASE_URL;
   if (!databaseUrl) {
-    process.stderr.write("\n✗ .env has no DATABASE_URL — run `pnpm run setup`.\n");
+    process.stderr.write("\n✗ No DATABASE_URL — set it in the environment or run `pnpm run setup`.\n");
     process.exit(1);
   }
 }
