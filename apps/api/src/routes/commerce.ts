@@ -14,6 +14,7 @@ import {
 import { getConfig } from "../config";
 import { taggedLogger } from "../logger";
 import {
+  computeFeeCents,
   createCheckoutSession,
   getFeePercent,
   getStripeClient,
@@ -140,7 +141,7 @@ export function registerCommerceRoutes(app: FastifyInstance): void {
         buyerEmail: parsed.data.buyerEmail ?? null,
         stripeSessionId: `pending_${product.id}_${Date.now()}`,
         amountCents: product.priceCents,
-        feeCents: Math.round((product.priceCents * getFeePercent()) / 100),
+        feeCents: computeFeeCents(product.priceCents),
         currency: product.currency,
         status: "pending",
       },

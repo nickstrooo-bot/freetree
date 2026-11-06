@@ -5,7 +5,9 @@ const log = taggedLogger("commerce:stripe");
 // ─── FreeTree Commerce — Stripe Connect integration ──────────────────────────
 // Sellers connect their own Stripe account (Connect Standard — $0 platform cost).
 // Stripe Checkout sessions created ON the seller's connected account, with a
-// platform application fee (default 4%) flowing back to FreeTree.
+// platform application fee (default 4%) flowing back to FreeTree. The fee is
+// taken on what's left AFTER Stripe's processing fee — Stripe's fee is
+// separate from ours and comes off first.
 // Everything degrades gracefully: if STRIPE_SECRET_KEY is unset, all commerce
 // endpoints report "not configured" instead of crashing.
 
@@ -18,6 +20,20 @@ export function getFeePercent(): number {
   const parsed = raw ? Number(raw) : 4;
   if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) return 4;
   return parsed;
+}
+
+/**
+ * FreeTree's cut, in cents: feePercent of what's left AFTER Stripe's
+ * processing fee. Stripe's fee isn't known exactly until the card is
+ * charged (it varies by card and country), so we estimate the standard
+ * US card rate: 2.9% + 30c. The seller's net is: sale − Stripe fee −
+ * our fee. Stripe's fee is separate from ours and goes to Stripe, not us.
+ */
+export function computeFeeCents(amountCents: number, feePercent?: number): number {
+  const percent = feePercent ?? getFeePercent();
+  const stripeFeeEstimate = Math.round(amountCents * 0.029) + 30;
+  const netAfterStripe = Math.max(0, amountCents - stripeFeeEstimate);
+  return Math.round((netAfterStripe * percent) / 100);
 }
 
 export function isStripeConfigured(): boolean {
@@ -123,15 +139,16 @@ export interface CheckoutSessionResult {
 
 /**
  * Create a Stripe Checkout session on the seller's connected account.
- * The application fee (default 4%) is taken automatically by Stripe and
- * routed to the platform; the seller keeps the rest.
+ * The application fee (default 4% of what's left after Stripe's
+ * processing fee) is taken automatically by Stripe and routed to the
+ * platform; the seller keeps the rest.
  */
 export async function createCheckoutSession(
   stripe: StripeLike,
   input: CheckoutSessionInput,
 ): Promise<CheckoutSessionResult> {
   const feePercent = getFeePercent();
-  const feeAmount = Math.round((input.amountCents * feePercent) / 100);
+  const feeAmount = computeFeeCents(input.amountCents, feePercent);
 
   const session = await stripe.checkout.sessions.create(
     {
