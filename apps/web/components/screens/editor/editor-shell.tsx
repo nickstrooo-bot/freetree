@@ -16,6 +16,7 @@ import { SettingsTab } from "./tabs/settings-tab";
 import { AnalyticsTab } from "./tabs/analytics-tab";
 import { ProductsTab } from "./tabs/products-tab";
 import { EmailsTab } from "./tabs/emails-tab";
+import { FormsTab } from "./tabs/forms-tab";
 
 export interface EditorShellProps {
   tab: EditorTab;
@@ -78,6 +79,7 @@ export function EditorShell({ tab, onSwitchKyte }: EditorShellProps) {
               {activeTab === "scheduled" ? <ScheduledTab /> : null}
               {activeTab === "products" ? <ProductsTab /> : null}
               {activeTab === "emails" ? <EmailsTab /> : null}
+              {activeTab === "forms" ? <FormsTab /> : null}
               {activeTab === "design" ? <DesignTab /> : null}
               {activeTab === "settings" ? <SettingsTab /> : null}
               {activeTab === "analytics" ? <AnalyticsTab /> : null}

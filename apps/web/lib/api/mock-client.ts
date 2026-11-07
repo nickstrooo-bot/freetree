@@ -568,6 +568,55 @@ export function createMockClient(getCurrentUserId: () => string): ApiClient {
         };
       },
     },
+    forms: {
+      async getForm() {
+        return { form: null };
+      },
+      async upsertForm(input) {
+        return {
+          id: "form_mock",
+          kyteId: input.kyteId,
+          title: input.title ?? "Contact me",
+          description: input.description ?? null,
+          buttonText: input.buttonText ?? "Send message",
+          successText: input.successText ?? "Thanks! I'll get back to you.",
+          fields: input.fields,
+          endpointToken: "mock_token",
+          endpointPath: "/forms/submit/mock_token",
+          notifyEmail: input.notifyEmail ?? null,
+          active: input.active ?? true,
+          sortOrder: 0,
+          submissionCount: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      },
+      async deleteForm() {
+        return { ok: true as const };
+      },
+      async regenerateEndpoint() {
+        return { endpointToken: "mock_token_2", endpointPath: "/forms/submit/mock_token_2" };
+      },
+      async listSubmissions() {
+        return {
+          submissions: [],
+          nextCursor: null,
+          counts: { new: 0, contacted: 0, converted: 0, spam: 0, total: 0 },
+        };
+      },
+      async getSubmission() {
+        throw new Error("No such submission.");
+      },
+      async updateSubmission() {
+        throw new Error("No such submission.");
+      },
+      async deleteSubmission() {
+        return { ok: true as const };
+      },
+      async exportCsv() {
+        return { csv: "submitted_at,status,spam,notes,follow_up_at\n", filename: "form-submissions.csv" };
+      },
+    },
 
     schedule: {
       async list({ kyteId }) {
@@ -713,9 +762,9 @@ export function createMockClient(getCurrentUserId: () => string): ApiClient {
       async topLinks() {
         return {
           links: [
-            { linkUrl: "https://freetree.link/blog", linkTitle: "My newsletter", clicks: 143 },
+            { linkUrl: "https://getfreetree.com/blog", linkTitle: "My newsletter", clicks: 143 },
             { linkUrl: "https://github.com/kytelink", linkTitle: "Star on GitHub", clicks: 92 },
-            { linkUrl: "https://freetree.link/launch", linkTitle: "New: launch notes", clicks: 51 },
+            { linkUrl: "https://getfreetree.com/launch", linkTitle: "New: launch notes", clicks: 51 },
           ],
         };
       },

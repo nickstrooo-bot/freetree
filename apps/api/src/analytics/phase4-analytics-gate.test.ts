@@ -35,7 +35,7 @@ beforeEach(() => {
 
 describe("kyte analytics router respects the analytics capability (SH4)", () => {
   it("throws FEATURE_DISABLED when analytics is off", async () => {
-    setConfigForTest(loadConfig({ ...process.env, CLICKHOUSE_URL: "" }));
+    setConfigForTest(loadConfig({ ...process.env, ANALYTICS_DISABLED: "true" }));
     const caller = createCaller(await contextFor(store, "agent@kytelink.dev"));
     try {
       await caller.analytics.overview({ kyteId: "kyte_ag_1", days: 30 });
@@ -43,6 +43,13 @@ describe("kyte analytics router respects the analytics capability (SH4)", () => 
     } catch (error) {
       expect(appCodeOf(error)).toBe("FEATURE_DISABLED");
     }
+  });
+
+  it("does not throw FEATURE_DISABLED when analytics is on via the SQLite default", async () => {
+    setConfigForTest(loadConfig({ ...process.env, CLICKHOUSE_URL: "" }));
+    const caller = createCaller(await contextFor(store, "agent@kytelink.dev"));
+    const result = await caller.analytics.overview({ kyteId: "kyte_ag_1", days: 30 });
+    expect(result).toHaveProperty("totalViews");
   });
 
   it("does not throw FEATURE_DISABLED when analytics is on", async () => {

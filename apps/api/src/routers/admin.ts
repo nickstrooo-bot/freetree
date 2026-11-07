@@ -128,6 +128,7 @@ import { clearKyteMembership } from "../analytics";
 import { enqueueRevalidate, enqueueSitemapRefresh } from "../workers/queues";
 import { recordAdminAction } from "../admin/admin-audit";
 import { exportRows as runExport } from "../admin/admin-exports";
+import { hasClickhouse } from "../admin/clickhouse-raw";
 import { resolveRange, topKytes, trafficBreakdown, trafficSeries } from "../admin/traffic-queries";
 import { growth } from "../admin/growth-queries";
 
@@ -419,8 +420,9 @@ export const adminRouter = router({
     .output(overviewStatsSchema)
     .query(({ ctx }) => queries.overview(getDb(), ctx.config.capabilities)),
 
-  live: admin.output(liveStatsSchema).query(({ ctx }) => {
-    if (!ctx.config.capabilities.analytics) throw featureDisabled("Analytics is disabled.");
+  live: admin.output(liveStatsSchema).query(() => {
+    // Raw ClickHouse SQL underneath — the SQLite store cannot serve it.
+    if (!hasClickhouse()) throw featureDisabled("Analytics is disabled.");
     return queries.live(getDb());
   }),
 
@@ -436,16 +438,18 @@ export const adminRouter = router({
   trafficSeries: admin
     .input(trafficRangeInput)
     .output(trafficSeriesOutput)
-    .query(({ ctx, input }) => {
-      if (!ctx.config.capabilities.analytics) throw featureDisabled("Analytics is disabled.");
+    .query(({ input }) => {
+      // Raw ClickHouse SQL underneath — the SQLite store cannot serve it.
+      if (!hasClickhouse()) throw featureDisabled("Analytics is disabled.");
       return trafficSeries(resolveRange(input));
     }),
 
   topKytes: admin
     .input(topKytesInput)
     .output(topKytesOutput)
-    .query(async ({ ctx, input }) => {
-      if (!ctx.config.capabilities.analytics) throw featureDisabled("Analytics is disabled.");
+    .query(async ({ input }) => {
+      // Raw ClickHouse SQL underneath — the SQLite store cannot serve it.
+      if (!hasClickhouse()) throw featureDisabled("Analytics is disabled.");
       const kytes = await topKytes(getDb(), resolveRange(input), input.limit);
       return { kytes };
     }),
@@ -453,8 +457,9 @@ export const adminRouter = router({
   trafficBreakdown: admin
     .input(trafficRangeInput)
     .output(trafficBreakdownSchema)
-    .query(({ ctx, input }) => {
-      if (!ctx.config.capabilities.analytics) throw featureDisabled("Analytics is disabled.");
+    .query(({ input }) => {
+      // Raw ClickHouse SQL underneath — the SQLite store cannot serve it.
+      if (!hasClickhouse()) throw featureDisabled("Analytics is disabled.");
       return trafficBreakdown(resolveRange(input));
     }),
 
@@ -463,7 +468,12 @@ export const adminRouter = router({
   growth: admin
     .input(growthInput)
     .output(growthStatsSchema)
-    .query(({ ctx, input }) => growth(getDb(), ctx.config.capabilities, input.days)),
+    .query(({ ctx, input }) =>
+      // The funnel's ClickHouse half reads as null (not zero) without a
+      // ClickHouse server; the SQLite store serves seller analytics, not
+      // these raw funnel queries.
+      growth(getDb(), { ...ctx.config.capabilities, analytics: hasClickhouse() }, input.days),
+    ),
 
   searchUsers: admin
     .input(searchUsersInput)
@@ -594,7 +604,8 @@ export const adminRouter = router({
     .query(({ ctx, input }) =>
       queries.kyteDetail(getDb(), input.kyteId, {
         apiBaseUrl: ctx.config.apiBaseUrl,
-        analytics: ctx.config.capabilities.analytics,
+        // The detail sparkline is raw ClickHouse SQL, not the SQLite store.
+        analytics: hasClickhouse(),
         webBaseUrl: ctx.config.webBaseUrl,
       }),
     ),

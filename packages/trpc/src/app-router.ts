@@ -14,6 +14,8 @@ import { adminRouter } from "./routers/admin";
 import { commerceRouter } from "./routers/commerce";
 import { emailCaptureRouter } from "./routers/email-capture";
 import { tipJarRouter } from "./routers/tip-jar";
+import { formsRouter } from "./routers/forms";
+import { linkCardRouter } from "./routers/link-card";
 
 export const appRouter = router({
   org: orgRouter,
@@ -31,6 +33,8 @@ export const appRouter = router({
   commerce: commerceRouter,
   emailCapture: emailCaptureRouter,
   tipJar: tipJarRouter,
+  forms: formsRouter,
+  linkCard: linkCardRouter,
 });
 
 export type AppRouter = typeof appRouter;

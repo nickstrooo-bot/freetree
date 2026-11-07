@@ -12,7 +12,8 @@ const log = taggedLogger("boot");
 
 /** What to set to turn each optional capability on, named on the boot line. */
 const CAPABILITY_SWITCHES: Record<keyof Capabilities, string> = {
-  analytics: "CLICKHOUSE_URL",
+  analytics: "on by default (SQLite store); set ANALYTICS_DISABLED=true to turn off",
+  clickhouseAnalytics: "CLICKHOUSE_URL",
   uploads: "AWS_ENDPOINT_URL + AWS_S3_BUCKET",
   emailDelivery: "EMAIL_PROVIDER=resend|smtp",
   moderation: "MODERATION_PROVIDER=openai + OPENAI_API_KEY",

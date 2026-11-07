@@ -199,6 +199,7 @@ model Kyte {
   domains      Domain[]
   products     Product[]
   emailCaptureBlock EmailCaptureBlock?
+  formBlock    FormBlock?
 
   @@index([orgId])
 }
@@ -539,6 +540,24 @@ model Purchase {
   status              String    @default("pending")
   // Optional message the buyer left with a tip. Null for product purchases.
   tipMessage          String?
+  // Discount engine (see DiscountRule): total cents taken off by FreeTree
+  // rules at checkout. amountCents is the DISCOUNTED total actually charged;
+  // amountCents + discountCents is the pre-discount total.
+  discountCents Int @default(0)
+  // Normalized coupon code redeemed for this purchase, if any.
+  couponCode String?
+  // Gift-card portion of this order (see GiftCard): amountCents is what
+  // Stripe charged; amountCents + giftCardCents is the discounted total.
+  // A fully gift-card-covered order has amountCents 0, feeCents 0, and no
+  // Stripe session — it is completed at checkout, paid by the card.
+  giftCardCents Int @default(0)
+  // The card that paid giftCardCents. Plain string, no FK — same reason as
+  // CouponRedemption.purchaseId (release path deletes the purchase row).
+  giftCardId String?
+  // What the totals choke-point applied: { applied: [{ ruleId, ruleName,
+  // amountCents }], giftProductIds: string[] }. Audit trail only — the
+  // charged amount is amountCents, never this.
+  discountBreakdown Json?
   downloadToken       String    @unique @default(cuid())
   downloadExpiresAt   DateTime?
   downloadCount       Int       @default(0)
@@ -559,6 +578,300 @@ model StripeConnectAccount {
   detailsSubmitted Boolean  @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+// ─── FreeTree Discount Engine (Bagisto + Saleor models, rebuilt natively) ──
+// FreeTree used to only pass Stripe coupons through (allow_promotion_codes) —
+// no automatic rules, no Buy-X-Get-Y, no free-shipping threshold, no
+// per-seller usage caps. This rebuilds the rule model natively, in two
+// engines plus Saleor's three-mechanism shape:
+//
+//   * Catalog rules (Bagisto) / catalogue promotions (Saleor): discount
+//     applied to product prices PRE-cart — automatic sale pricing on the
+//     listing itself (date range, product conditions). Applied AT READ TIME
+//     by the engine, never via reindex: Bagisto's own gotcha is that
+//     creating/updating a catalog rule fires a full price reindex that can
+//     blow past HTTP timeouts, so FreeTree never stores a sale price.
+//   * Cart rules (Bagisto) / order promotions + vouchers (Saleor): discount
+//     at checkout, triggered automatically or by code; conditions over
+//     cart/cart-item/product attributes; priority ordering with an "End Other
+//     Rules" stop-flag; actions % off per item, fixed off per item, fixed
+//     off whole cart, Buy-X-Get-Y free, free shipping, and Saleor's GIFT
+//     (a zero-priced gift line added to the order).
+//   * Coupons: single manual code or bulk auto-generation (length 4–30,
+//     prefix/suffix, quantity 1–100), Uses Per Coupon and Uses Per Customer
+//     caps, date windows, one coupon per cart.
+//   * Totals choke-point: collectTotals() in apps/api/src/commerce/
+//     discounts.ts is the ONE place a checkout total is computed — every
+//     discount flows through it, and it feeds the DISCOUNTED amount into
+//     computeFeeCents at both the charge and the seller-preview sites.
+//   * Atomic redemption (Stacks Commerce rule): redeeming a coupon bumps
+//     usage_count and enforces max_uses / is_active / start-end dates IN
+//     THE WHERE CLAUSE of a single conditional UPDATE — the database decides
+//     the race, not read-check-write.
+//
+// Open-core note: the discount engine is a NEW money-making differentiator.
+// Everything discount-specific lives in its own files (this schema +
+// migration, packages/schemas/src/discounts.ts, apps/api/src/commerce/
+// discounts.ts + tests, the discount procedures in routers/commerce.ts, and
+// the discount hooks in routes/commerce.ts + commerce/stripe.ts), so it can
+// be split into the closed layer later if Nick decides that. The totals
+// choke-point itself (collectTotals) is the one shared seam — splitting the
+// engine out later means the choke-point calls into the closed module rather
+// than owning the rules. No licensing call is made here.
+
+model DiscountRule {
+  id             String    @id @default(cuid())
+  kyteId         String
+  orgId          String
+  name           String
+  // "catalog" — Bagisto catalog rule / Saleor catalogue promotion (automatic
+  // sale pricing, applied at read time). "cart" — Bagisto cart rule / Saleor
+  // order promotion or voucher (discount at checkout via collectTotals).
+  kind           String    @default("cart")
+  // Saleor's organizing shape: "catalogue" | "order" | "voucher".
+  // catalogue <=> kind "catalog"; order <=> kind "cart", trigger "automatic";
+  // voucher <=> kind "cart", trigger "coupon".
+  mechanism      String    @default("order")
+  // "automatic" — applies on its own; "coupon" — needs a Coupon code.
+  trigger        String    @default("automatic")
+  active         Boolean   @default(true)
+  // Lower runs first; "End Other Rules" stop-flag (Bagisto).
+  priority       Int       @default(0)
+  stopOtherRules Boolean   @default(false)
+  startsAt       DateTime?
+  endsAt         DateTime?
+  // Saleor voucher target: "entire_order" | "specific_product" | "shipping".
+  target         String    @default("entire_order")
+  // Conditions, evaluated by the engine (JSON so new condition types don't
+  // need a migration): { productIds?: string[], minSubtotalCents?: number,
+  // minQuantity?: number }.
+  conditions     Json      @default("{}")
+  // Action (JSON): { type: "percent" | "fixed_per_item" |
+  // "fixed_whole_cart" | "buy_x_get_y" | "free_shipping" | "gift",
+  // percent?: number, amountCents?: number, buyQty?: number,
+  // getQty?: number, giftProductId?: string }.
+  action         Json
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  kyte    Kyte     @relation(fields: [kyteId], references: [id], onDelete: Cascade)
+  coupons Coupon[]
+
+  @@index([orgId, active])
+  @@index([kyteId, kind])
+}
+
+model Coupon {
+  id                 String    @id @default(cuid())
+  kyteId             String
+  orgId              String
+  ruleId             String
+  // Normalized at write time: trimmed + uppercased. Unique per org — two
+  // sellers may both run "WELCOME10"; one seller may not reuse a code.
+  code               String
+  // Bump ONLY via the atomic conditional UPDATE in redeemCouponAtomic —
+  // never read-check-write (two buyers redeeming the last use must not
+  // both succeed).
+  usageCount         Int       @default(0)
+  // Uses Per Coupon (Bagisto). Null = unlimited.
+  maxUses            Int?
+  // Uses Per Customer (Bagisto) / applyOncePerCustomer = 1 (Saleor).
+  // Null = unlimited. Enforced by the same atomic UPDATE via a subquery
+  // over CouponRedemption; null buyerEmail skips the check (anonymous
+  // buyers can't be attributed to a customer).
+  maxUsesPerCustomer Int?
+  startsAt           DateTime?
+  endsAt             DateTime?
+  active             Boolean   @default(true)
+  // True when minted by the bulk generator (vs typed in by the seller).
+  generated          Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  rule        DiscountRule       @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  redemptions CouponRedemption[]
+
+  @@unique([orgId, code])
+  @@index([ruleId])
+  @@index([orgId, active])
+}
+
+model CouponRedemption {
+  id         String   @id @default(cuid())
+  couponId   String
+  orgId      String
+  // Buyer email as given at checkout; null for anonymous buyers.
+  buyerEmail String?
+  // The Purchase the redemption paid for. Plain string, no FK — the purchase
+  // row is deleted if Stripe session creation fails and the redemption is
+  // released with it, so a hard FK would fight the release path.
+  purchaseId String?
+  redeemedAt DateTime @default(now())
+
+  coupon Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+
+  @@index([couponId, buyerEmail])
+  @@index([couponId])
+  @@index([orgId])
+}
+
+// ─── FreeTree Gift Cards (Saleor + blamejs ledger + Stacks state machine ──
+// ─── + Spree remainder-as-new-card, rebuilt natively) ───────────────────────
+// A seller issues gift cards (single or bulk) with a currency-based balance.
+// The plaintext code is NEVER stored: only its SHA-256 hash + a 4-char hint
+// live here (see apps/api/src/commerce/gift-cards.ts). Balance changes go
+// through ONE entry point (updateBalance) whose single conditional UPDATE
+// enforces the state machine in its WHERE clause; every change appends a
+// GiftCardLedger row with a balance-after snapshot. Redemption (negative)
+// only from ACTIVE; reload (positive) from ACTIVE or from USED when
+// reloadable; balance hitting 0 flips status to USED in the same statement.
+// A fully-covering card pays an order with NO Stripe charge; a partial one
+// leaves only the remainder for Stripe, and the fee is computed on that
+// remainder only (see applyGiftCardToTotals + the checkout route).
+//
+// Refunds (Solidus model): a Refund is a SEPARATE model from the payment,
+// and it is always paired with an OrderAdjustment in the same transaction
+// (a bare refund must never leave the order balance_due). A refund of a
+// gift-card-paid order reverses the card's share proportionally — back to
+// the original card when it can take credit, otherwise minted as a NEW
+// card for the buyer (Spree) — never silently dropped or double-counted.
+//
+// Open-core note: gift cards are a NEW money-making differentiator.
+// Everything gift-card-specific lives in its own files (this schema +
+// migration, packages/schemas/src/gift-cards.ts,
+// apps/api/src/commerce/gift-cards.ts + tests, the gift-card procedures in
+// routers/commerce.ts, and the gift-card hooks in routes/commerce.ts), so
+// it can be split into the closed layer later if Nick decides that. The
+// shared seams are collectTotals() (which the card applies AFTER) and the
+// webhook's refund path (which records Refund + OrderAdjustment for every
+// order, card or not). No licensing call is made here. blamejs.shop was
+// DESIGN REFERENCE ONLY — its license is ambiguous (GitHub NOASSERTION vs
+// README Apache-2.0 badge, unconfirmed 2026-11-07) and nothing was copied
+// from it; Spree is AGPL, ideas only.
+
+model GiftCard {
+  id      String @id @default(cuid())
+  kyteId  String
+  orgId   String
+  // SHA-256 hex of the normalized 16-char code. Plaintext is returned
+  // once at creation and is then unrecoverable.
+  codeHash String
+  // Last 4 chars of the code — seller lookup / support only.
+  codeHint String
+  // Currency-based balance (Saleor): a card only pays same-currency orders.
+  currency            String @default("usd")
+  initialBalanceCents Int
+  balanceCents        Int
+  // ACTIVE | USED | EXPIRED | DEACTIVATED. EXPIRED is set by a future
+  // sweeper; until then expiry is enforced live from expiresAt (the
+  // atomic UPDATE and checkGiftCard both read it, not the status).
+  status       String  @default("ACTIVE")
+  // A reloadable card can be topped up after it hits zero; a
+  // non-reloadable one cannot be revived (Stacks rule). Release (undoing
+  // a failed checkout) is NOT a reload and revives either kind.
+  isReloadable Boolean @default(false)
+  issuedTo     String?
+  expiresAt    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  kyte        Kyte                 @relation(fields: [kyteId], references: [id], onDelete: Cascade)
+  ledger      GiftCardLedger[]
+  redemptions GiftCardRedemption[]
+
+  @@unique([orgId, codeHash])
+  @@index([orgId, status])
+  @@index([kyteId])
+}
+
+model GiftCardLedger {
+  id     String @id @default(cuid())
+  giftCardId String
+  orgId  String
+  // issue | redeem | reload | refund | release | expire
+  kind             String
+  // Signed cents: negative = debit, positive = credit.
+  amountCents      Int
+  // Balance AFTER this entry — the O(1) read (blamejs's balance_after).
+  balanceAfterCents Int
+  purchaseId       String?
+  note             String?
+  createdAt        DateTime @default(now())
+
+  giftCard GiftCard @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+
+  @@index([giftCardId, createdAt])
+  @@index([orgId])
+}
+
+model GiftCardRedemption {
+  id         String @id @default(cuid())
+  giftCardId String
+  orgId      String
+  // Buyer email as given at checkout; null for anonymous buyers (guest
+  // redemption needs no account — Spree model).
+  buyerEmail String?
+  // The Purchase the redemption paid for. Plain string, no FK — the
+  // purchase row is deleted if Stripe session creation fails and the
+  // redemption is released with it, so a hard FK would fight the release
+  // path (same reason as CouponRedemption.purchaseId).
+  purchaseId String?
+  amountCents Int
+  // redeemed | released
+  status     String @default("redeemed")
+  redeemedAt DateTime @default(now())
+  releasedAt DateTime?
+
+  giftCard GiftCard @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+
+  @@index([giftCardId])
+  @@index([purchaseId])
+  @@index([orgId])
+}
+
+// A Refund is a separate model from the Payment (Solidus), never just a
+// negative payment — that is what keeps partial / multiple refunds sane.
+// Every Refund is created together with its OrderAdjustment in one
+// transaction (see recordGiftCardRefund): the adjustment is what keeps the
+// order's balance_due honest, so a bare refund can never corrupt it.
+model Refund {
+  id         String @id @default(cuid())
+  purchaseId String
+  orgId      String
+  amountCents Int
+  currency   String @default("usd")
+  stripeRefundId String?
+  reason     String?
+  // Gift-card share of this refund, reversed proportionally (0 when the
+  // order was paid entirely via Stripe).
+  giftCardReversedCents Int @default(0)
+  // The original card the share was reversed to, if it could take credit.
+  giftCardId String?
+  // Replacement card minted when the original couldn't take the credit
+  // (USED + non-reloadable, deactivated, or expired) — Spree's
+  // remainder-as-new-card. The plaintext code is returned once by the
+  // refund call; the seller sends it to the buyer.
+  replacementGiftCardId String?
+  createdAt  DateTime @default(now())
+
+  @@index([purchaseId])
+  @@index([orgId])
+}
+
+model OrderAdjustment {
+  id         String @id @default(cuid())
+  purchaseId String
+  orgId      String
+  // refund | ... (future kinds: goodwill credit, price correction)
+  kind       String
+  // Signed cents: a refund adjustment is negative.
+  amountCents Int
+  note       String?
+  createdAt  DateTime @default(now())
+
+  @@index([purchaseId])
+  @@index([orgId])
 }
 
 // ─── FreeTree Email Capture ────────────────────────────────────────────────
@@ -607,4 +920,71 @@ model EmailSubscriber {
   @@unique([blockId, email])
   @@index([kyteId, status])
   @@index([orgId])
+}
+
+// ─── FreeTree Forms + Inbox ────────────────────────────────────────────────
+// Formspree-style contact forms (FormGrid pattern, MIT — pattern reference,
+// not a dependency). One form block per kyte; the form itself is a single
+// JSON document (SurveyJS storage pattern: fields, labels, and validation
+// live in JSON, one small renderer turns it into HTML — export/import/
+// duplicate is copying JSON). Submissions land in an owner inbox with status
+// New → Contacted → Converted, notes, and a follow-up date. Fixed field set
+// v1: text, email, textarea, choice. NO file field — uploads would need
+// S3/MinIO and no $0 storage answer exists yet (deferred).
+
+model FormBlock {
+  id            String   @id @default(cuid())
+  kyteId        String   @unique
+  orgId         String
+  title         String   @default("Contact me")
+  description   String?  @db.Text
+  buttonText    String   @default("Send message")
+  successText   String   @default("Thanks! I'll get back to you.")
+  // The form definition: { fields: [{ id, type, label, required, ... }] }.
+  // Validated by formDefinitionSchema in @kytelink/schemas.
+  fields        Json     @default("[]")
+  // Unique public endpoint token: POST /forms/submit/<token>. Rotating it
+  // (regenerateEndpoint) invalidates every embed using the old URL.
+  endpointToken String   @unique @default(cuid())
+  // Where new-submission notifications go. Null = the org owner's email.
+  notifyEmail   String?
+  active        Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  kyte        Kyte             @relation(fields: [kyteId], references: [id], onDelete: Cascade)
+  submissions FormSubmission[]
+
+  @@index([orgId])
+}
+
+model FormSubmission {
+  id         String   @id @default(cuid())
+  formId     String
+  kyteId     String
+  orgId      String
+  // Answers keyed by field id: { "<fieldId>": "<answer>" }. Choice answers
+  // are the option label the visitor picked. Validated against the form's
+  // field definitions at submit time; never trusted as-is.
+  payload    Json
+  // Honeypot / rate-limit trips set this at intake; the owner can also flag
+  // by hand. Flagged rows still show in the inbox (excluded by default).
+  spam       Boolean  @default(false)
+  // new | contacted | converted
+  status     String   @default("new")
+  notes      String?  @db.Text
+  followUpAt DateTime?
+  // SHA-256 of the submitter IP (daily-rotating salt, same as analytics) —
+  // abuse triage only, never a raw IP.
+  ipHash     String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  form FormBlock @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId, status, createdAt])
+  @@index([kyteId, createdAt])
+  @@index([orgId, createdAt])
 }

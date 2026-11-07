@@ -51,7 +51,9 @@ function ratioPct(part: number, whole: number): number {
 export function TrafficScreen() {
   const capabilities = useCapabilities();
 
-  if (!capabilities.analytics) {
+  // Traffic is raw ClickHouse SQL underneath — the SQLite store that serves
+  // seller analytics cannot answer it.
+  if (!capabilities.clickhouseAnalytics) {
     return (
       <>
         <PageHeader title="Traffic" description={DESCRIPTION} />

@@ -126,10 +126,12 @@ non-queue key the app writes carries an explicit TTL (profile/domain cache,
 rate-limit counters, beacon dedupe sets), so steady-state memory is bounded
 by traffic, not by uptime — a small instance (≥256 MB) is plenty to start.
 
-### ClickHouse (optional — analytics)
+### ClickHouse (optional — admin analytics)
 
-Backs page/link/product analytics and their rollups. Skip it entirely and
-the app runs fine with analytics off.
+Backs the admin Live / Traffic / growth screens, which run raw ClickHouse
+SQL. Skip it entirely and the app runs fine: seller analytics (the editor's
+Analytics tab, per-kyte views/clicks/referrers/devices/countries) is served
+by the built-in SQLite store with no configuration.
 
 ```yaml
 clickhouse:
@@ -319,7 +321,7 @@ Fills: `DOMAIN_PROVIDER`, `CUSTOM_DOMAIN_A_RECORD`, `CUSTOM_DOMAIN_CNAME_TARGET`
 
 | Missing | Capability off | What the user sees |
 | --- | --- | --- |
-| `CLICKHOUSE_URL` | **analytics** | Beacon endpoints return 202 and drop; the editor has no Analytics tab; admin Live/Traffic views show a friendly "Analytics is off — set CLICKHOUSE_URL" card; server logs stay on stdout (no `app_logs`). Everything else works. |
+| `ANALYTICS_DISABLED=true` | **analytics** | Beacons return 202 and drop; the editor has no Analytics tab; admin Live/Traffic views show a friendly "Analytics is off" card; server logs stay on stdout (no `app_logs`). Everything else works. Without it, analytics is on by default via the built-in SQLite store (`ANALYTICS_SQLITE_PATH`, default `data/analytics.db`) — no ClickHouse needed. |
 | `AWS_*` (S3) | **uploads** (the whole image concept) | Upload tiles hidden; onboarding's avatar step offers only the built-in default avatars (locally generated initials SVGs — no third party); profiles render clean without avatars; OG cards fall back to text-only; owned/static assets still work (serve `packages/cdn` locally and point `NEXT_PUBLIC_CDN_URL` at it). |
 | `RESEND_API_KEY`/SMTP | **emailDelivery** → console | OTPs and invites print to server stdout only — mailpit does NOT capture console-mode output (it's an SMTP inbox, not a log tail). To see codes in mailpit, set `EMAIL_PROVIDER=smtp` with `SMTP_HOST=localhost`/`SMTP_PORT=1025` (the `.env.example` default already does this against the compose stack). Either way everything still functions — you just read codes from stdout instead. |
 | `OPENAI_API_KEY` | **moderation** → none | Publishes auto-approve; the feature is invisible. The AI "Other" link import is hidden too; Linktree/Beacons/Bio.link imports still work (deterministic parsers). |

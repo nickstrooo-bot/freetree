@@ -5,13 +5,14 @@ import { QrCode as QrCodeIcon } from "lucide-react";
 // otherwise ship to every visitor.
 import { FreeTreeQrCode, QR_BG_COLOR } from "@kytelink/ui";
 import { ProfileView } from "@kytelink/ui/profile-view";
-import type { PublicProduct, PublicEmailCaptureBlock, PublicTipJar } from "@kytelink/ui";
+import type { PublicProduct, PublicEmailCaptureBlock, PublicTipJar, PublicFormBlock } from "@kytelink/ui";
 import type { Icon, Link, ProfileContent } from "@kytelink/schemas";
 import { sendEventBeacon, sendLinkBeacon, sendPageBeacon } from "../../lib/beacons";
 import { startCheckout } from "../../lib/api/products-fetch";
 import { startTip } from "../../lib/api/tip-fetch";
 import { fetchLiveStatus, type LiveStatus } from "../../lib/api/live-status-fetch";
 import { subscribeEmail } from "../../lib/api/email-capture-fetch";
+import { submitForm } from "../../lib/api/forms-fetch";
 import { Modal } from "../ui/modal";
 import { Button } from "../ui/button";
 import { SHARE_DOMAINS } from "../../consts/brand";
@@ -24,6 +25,7 @@ export interface PublicProfileProps {
   products?: PublicProduct[];
   checkoutEnabled?: boolean;
   emailCaptureBlock?: PublicEmailCaptureBlock | null;
+  formBlock?: PublicFormBlock | null;
 }
 
 const QR_CONTAINER_ID = "freetree-public-qr";
@@ -72,6 +74,7 @@ export function PublicProfile({
   products = [],
   checkoutEnabled = false,
   emailCaptureBlock = null,
+  formBlock = null,
 }: PublicProfileProps) {
   const [qrOpen, setQrOpen] = useState(false);
   const [buyingProductId, setBuyingProductId] = useState<string | null>(null);
@@ -192,6 +195,12 @@ export function PublicProfile({
         checkoutEnabled={checkoutEnabled}
         emailCaptureBlock={emailCaptureBlock}
         onEmailSubscribe={(email) => subscribeEmail(username, email)}
+        formBlock={formBlock}
+        onFormSubmit={
+          formBlock
+            ? (answers) => submitForm(formBlock.endpointPath, answers)
+            : undefined
+        }
         tipJar={tipJar}
         onTip={onTip}
         tipping={tipping}

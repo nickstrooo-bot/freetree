@@ -16,6 +16,11 @@ export {
   type PublicTipJar,
 } from "./components/tip-jar-block";
 
+export {
+  FormBlock,
+  type PublicFormBlock,
+} from "./components/form-block";
+
 export { ErrorPage, type ErrorPageProps } from "./components/error-page";
 
 export {

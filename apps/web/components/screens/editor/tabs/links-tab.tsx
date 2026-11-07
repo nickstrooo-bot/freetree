@@ -87,7 +87,14 @@ export function LinksTab() {
                 >
                   <GripVertical className="size-4" />
                 </button>
-                {link.emoji ? (
+                {link.card?.image ? (
+                  <img
+                    src={link.card.image}
+                    alt=""
+                    className="size-6 shrink-0 rounded object-cover"
+                    loading="lazy"
+                  />
+                ) : link.emoji ? (
                   <span className="flex size-6 shrink-0 items-center justify-center text-ink">
                     <LinkEmoji emoji={link.emoji} size={20} />
                   </span>

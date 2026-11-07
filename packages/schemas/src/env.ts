@@ -17,6 +17,14 @@ export const optionalEnvSchema = z.object({
   CLICKHOUSE_USER: z.string().optional(),
   CLICKHOUSE_PASSWORD: z.string().optional(),
   CLICKHOUSE_DATABASE: z.string().optional(),
+  // Analytics storage. The built-in SQLite store is the default backend —
+  // one file, no service — so these are only needed to move or disable it.
+  // Path of the analytics SQLite file (default data/analytics.db, relative
+  // to the API working directory). Point it at a mounted volume to keep
+  // history across redeploys.
+  ANALYTICS_SQLITE_PATH: z.string().optional(),
+  // Set to true/1/yes/on to turn analytics off entirely.
+  ANALYTICS_DISABLED: z.string().optional(),
   AWS_ENDPOINT_URL: z.string().optional(),
   AWS_ACCESS_KEY_ID: z.string().optional(),
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
@@ -75,6 +83,10 @@ export const devOnlyEnvSchema = z.object({
 
 export const capabilitiesSchema = z.object({
   analytics: z.boolean(),
+  // True only when a ClickHouse server is configured: the admin screens that
+  // run raw ClickHouse SQL (Live, Traffic, growth funnel, kyte sparkline)
+  // need it, while seller analytics is served by the SQLite store.
+  clickhouseAnalytics: z.boolean(),
   uploads: z.boolean(),
   emailDelivery: z.boolean(),
   moderation: z.boolean(),
@@ -87,6 +99,7 @@ export type Capabilities = z.infer<typeof capabilitiesSchema>;
 
 type CapabilityEnv = {
   CLICKHOUSE_URL?: string;
+  ANALYTICS_DISABLED?: string;
   AWS_ENDPOINT_URL?: string;
   AWS_ACCESS_KEY_ID?: string;
   AWS_SECRET_ACCESS_KEY?: string;
@@ -141,7 +154,12 @@ export function computeCapabilities(env: CapabilityEnv): Capabilities {
     (emailProvider === "smtp" && present(env.SMTP_HOST));
 
   return {
-    analytics: present(env.CLICKHOUSE_URL),
+    // Seller analytics runs on the built-in SQLite store by default (zero new
+    // infrastructure); CLICKHOUSE_URL switches the backend to ClickHouse.
+    // ANALYTICS_DISABLED=true turns the whole capability off.
+    analytics: !parseBoolEnv(env.ANALYTICS_DISABLED),
+    clickhouseAnalytics:
+      present(env.CLICKHOUSE_URL) && !parseBoolEnv(env.ANALYTICS_DISABLED),
     uploads:
       present(env.AWS_ENDPOINT_URL) &&
       present(env.AWS_ACCESS_KEY_ID) &&

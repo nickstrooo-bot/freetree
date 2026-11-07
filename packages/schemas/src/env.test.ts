@@ -35,9 +35,10 @@ describe("optionalEnvSchema", () => {
 });
 
 describe("computeCapabilities", () => {
-  it("is all-off for an empty env", () => {
+  it("is all-off for an empty env except analytics, which the SQLite store serves by default", () => {
     expect(computeCapabilities({})).toEqual({
-      analytics: false,
+      analytics: true,
+      clickhouseAnalytics: false,
       uploads: false,
       emailDelivery: false,
       moderation: false,
@@ -47,8 +48,22 @@ describe("computeCapabilities", () => {
     });
   });
 
+  it("analytics turns off with ANALYTICS_DISABLED", () => {
+    expect(computeCapabilities({ ANALYTICS_DISABLED: "true" }).analytics).toBe(false);
+    expect(computeCapabilities({ ANALYTICS_DISABLED: "1" }).analytics).toBe(false);
+    expect(computeCapabilities({ ANALYTICS_DISABLED: "true" }).clickhouseAnalytics).toBe(false);
+    expect(computeCapabilities({ ANALYTICS_DISABLED: "false" }).analytics).toBe(true);
+  });
+
   it("analytics turns on with CLICKHOUSE_URL", () => {
     expect(computeCapabilities({ CLICKHOUSE_URL: "http://localhost:8123" }).analytics).toBe(true);
+  });
+
+  it("clickhouseAnalytics needs a ClickHouse server, not just the SQLite store", () => {
+    expect(computeCapabilities({}).clickhouseAnalytics).toBe(false);
+    expect(
+      computeCapabilities({ CLICKHOUSE_URL: "http://localhost:8123" }).clickhouseAnalytics,
+    ).toBe(true);
   });
 
   it("uploads needs the full S3 quartet", () => {

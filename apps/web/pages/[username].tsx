@@ -1,13 +1,14 @@
 import type { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from "next";
 import { getCdnUrl } from "@kytelink/cdn";
 import { isSelfRedirect, prefixHttps, type ProfileContent } from "@kytelink/schemas";
-import type { PublicProduct, PublicEmailCaptureBlock } from "@kytelink/ui";
+import type { PublicProduct, PublicEmailCaptureBlock, PublicFormBlock } from "@kytelink/ui";
 import { PublicProfile } from "../components/profile/public-profile";
 import { BlockedShell } from "../components/profile/blocked-shell";
 import { ProfileHead } from "../components/seo/profile-head";
 import { fetchPublishedProfile } from "../lib/api/profile-fetch";
 import { fetchPublicProducts } from "../lib/api/products-fetch";
 import { fetchPublicEmailCapture } from "../lib/api/email-capture-fetch";
+import { fetchPublicForm } from "../lib/api/forms-fetch";
 import { appealUrl } from "../consts/appeal";
 
 
@@ -24,6 +25,7 @@ type PageProps =
       products: PublicProduct[];
       checkoutEnabled: boolean;
       emailCaptureBlock: PublicEmailCaptureBlock | null;
+      formBlock: PublicFormBlock | null;
     };
 
 export const getStaticPaths: GetStaticPaths = () => {
@@ -62,9 +64,10 @@ export const getStaticProps: GetStaticProps<PageProps> = async (context) => {
 
   const avatarUrl = result.content.avatar?.url ? getCdnUrl(result.content.avatar.url) : null;
 
-  // Best-effort: commerce and email capture must never break the profile page.
+  // Best-effort: commerce, email capture, and forms must never break the profile page.
   const { products, checkoutEnabled } = await fetchPublicProducts(username);
   const { block: emailCaptureBlock } = await fetchPublicEmailCapture(username);
+  const { form: formBlock } = await fetchPublicForm(username);
 
   return {
     props: {
@@ -78,6 +81,7 @@ export const getStaticProps: GetStaticProps<PageProps> = async (context) => {
       products,
       checkoutEnabled,
       emailCaptureBlock,
+      formBlock,
     },
     revalidate: REVALIDATE_SECONDS,
   };
@@ -103,6 +107,7 @@ function ProfilePage(props: InferGetStaticPropsType<typeof getStaticProps>) {
         products={props.products}
         checkoutEnabled={props.checkoutEnabled}
         emailCaptureBlock={props.emailCaptureBlock}
+        formBlock={props.formBlock}
       />
     </>
   );

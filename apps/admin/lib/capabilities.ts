@@ -3,6 +3,7 @@ import { computeCapabilities, type Capabilities } from "@kytelink/schemas";
 export function readServerCapabilities(): Capabilities {
   return computeCapabilities({
     CLICKHOUSE_URL: process.env.CLICKHOUSE_URL,
+    ANALYTICS_DISABLED: process.env.ANALYTICS_DISABLED,
     AWS_ENDPOINT_URL: process.env.AWS_ENDPOINT_URL,
     AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
     AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,

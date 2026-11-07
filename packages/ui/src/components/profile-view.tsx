@@ -29,6 +29,7 @@ import { BookingBlockView } from "./booking-block";
 import { ScheduledBlockView } from "./scheduled-block";
 import { EmailSignupBlock, type PublicEmailCaptureBlock } from "./email-signup-block";
 import { TipJarBlock, type PublicTipJar } from "./tip-jar-block";
+import { FormBlock, type PublicFormBlock } from "./form-block";
 
 export interface ProfileViewProps {
   content: ProfileContent;
@@ -55,11 +56,15 @@ export interface ProfileViewProps {
   onTip?: (amountCents: number, tipMessage?: string) => Promise<void>;
   /** True while a tip checkout is starting (shows loading state). */
   tipping?: boolean;
+  /** Contact form block. Rendered after the email capture block. Null = none. */
+  formBlock?: PublicFormBlock | null;
+  /** Called with the visitor's answers. Parent POSTs to the form endpoint. */
+  onFormSubmit?: (answers: Record<string, string>) => Promise<{ successText: string }>;
   /** Live-now status for the seller's YouTube channel. Null = no badge. */
   liveBadge?: { isLive: boolean; videoUrl: string | null } | null;
 }
 
-const WATERMARK_URL = "https://freetree.link";
+const WATERMARK_URL = "https://getfreetree.com";
 const USER_LINK_REL = "ugc nofollow noopener noreferrer";
 const WATERMARK_TEXT = "made with kytelink";
 const AVATAR_SIZE = 108;
@@ -217,6 +222,8 @@ export function ProfileView({
   tipJar = null,
   onTip,
   tipping = false,
+  formBlock = null,
+  onFormSubmit,
   liveBadge = null,
 }: ProfileViewProps) {
   const themeKey = themeOverride ?? content.theme;
@@ -412,11 +419,18 @@ export function ProfileView({
             // treatment entirely — the seller's choice is never overridden.
             const brand = detectLinkBrand(link.link);
             const brandStyle = brand ? BRAND_STYLES[brand] : undefined;
-            const useBrand = Boolean(brandStyle && !link.color);
+            // Photo link-card: a link with fetched OpenGraph metadata renders
+            // rich — photo on top, title + description below. The photo is the
+            // point, so it wins over the brand button treatment.
+            const card = link.card;
+            const hasImage = Boolean(card?.image);
+            const hasDescription = Boolean(card?.description);
+            const useBrand = Boolean(brandStyle && !link.color && !hasImage);
             // A link with no emoji/icon of its own gets the brand's glyph in the
             // prefix chip (LittleLink shows the brand mark on the button). The
             // glyph inherits the button's text color.
-            const brandIconKey = brand && kind === "none" ? BRAND_FA_ICON[brand] : undefined;
+            const brandIconKey =
+              brand && kind === "none" && !hasImage ? BRAND_FA_ICON[brand] : undefined;
             const prefixKind = brandIconKey ? "icon" : kind;
             const prefixIconKey = kind === "icon" ? link.emoji : brandIconKey;
             const linkStyle: CSSProperties = {
@@ -435,6 +449,15 @@ export function ProfileView({
               textDecoration: "none",
               cursor: "pointer",
               textShadow,
+              // Rich cards stack vertically and clip the photo to the radius.
+              ...(hasImage
+                ? {
+                    flexDirection: "column",
+                    alignItems: "stretch",
+                    padding: 0,
+                    overflow: "hidden",
+                  }
+                : {}),
             };
 
             const prefixStyle: CSSProperties = {
@@ -460,7 +483,8 @@ export function ProfileView({
               <a
                 key={`${link.link}-${index}`}
                 className="kyte-link"
-                data-brand={brand ?? undefined}
+                data-brand={brand && !hasImage ? brand : undefined}
+                data-link-card={hasImage ? "rich" : hasDescription ? "text" : undefined}
                 href={normalizeHref(link.link)}
                 target="_blank"
                 rel={USER_LINK_REL}
@@ -470,6 +494,62 @@ export function ProfileView({
                   onLinkClick?.(link);
                 }}
               >
+                {hasImage ? (
+                  <>
+                    <img
+                      data-link-card-image=""
+                      src={resolveAsset(card!.image!)}
+                      alt=""
+                      width={420}
+                      height={120}
+                      loading="lazy"
+                      decoding="async"
+                      style={{
+                        width: "100%",
+                        height: "120px",
+                        objectFit: "cover",
+                        display: "block",
+                      }}
+                    />
+                    <span
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: "2px",
+                        padding: "12px 16px 14px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "15px",
+                          fontWeight: 500,
+                          fontFamily: font,
+                          color: "inherit",
+                          overflowWrap: "break-word",
+                        }}
+                      >
+                        {link.title}
+                      </span>
+                      {hasDescription ? (
+                        <span
+                          style={{
+                            fontSize: "13px",
+                            fontWeight: 400,
+                            fontFamily: font,
+                            color: "inherit",
+                            opacity: 0.85,
+                            lineHeight: 1.4,
+                            overflowWrap: "break-word",
+                          }}
+                        >
+                          {card!.description}
+                        </span>
+                      ) : null}
+                    </span>
+                  </>
+                ) : (
+                  <>
                 <span style={prefixStyle} data-link-prefix={prefixKind}>
                   {prefixKind === "icon" ? (
                     (() => {
@@ -503,9 +583,25 @@ export function ProfileView({
                   }}
                 >
                   {link.title}
+                  {hasDescription ? (
+                    <span
+                      style={{
+                        display: "block",
+                        marginTop: "2px",
+                        fontSize: "13px",
+                        fontWeight: 400,
+                        opacity: 0.85,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {card!.description}
+                    </span>
+                  ) : null}
                 </span>
 
                 <span style={{ width: "36px", height: "36px", flexShrink: 0 }} aria-hidden="true" />
+                  </>
+                )}
               </a>
             );
           })}
@@ -625,6 +721,27 @@ export function ProfileView({
               linkColor={linkColor}
               textShadow={textShadow}
               onSubscribe={onEmailSubscribe}
+            />
+          </div>
+        ) : null}
+
+        {formBlock && onFormSubmit ? (
+          <div
+            data-freetree-form-block-section=""
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              width: "100%",
+              marginTop: "18px",
+            }}
+          >
+            <FormBlock
+              block={formBlock}
+              extras={extras}
+              linkColor={linkColor}
+              textShadow={textShadow}
+              onSubmit={onFormSubmit}
             />
           </div>
         ) : null}

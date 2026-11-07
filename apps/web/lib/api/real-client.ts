@@ -315,6 +315,27 @@ export function createRealClient(getCurrentUserId: () => string): ApiClient {
       listTips: ({ kyteId, limit, cursor }) =>
         run(() => c.tipJar.listTips.query({ kyteId, limit: limit ?? 50, cursor })),
     },
+    forms: {
+      getForm: ({ kyteId }) => run(() => c.forms.getForm.query({ kyteId })),
+      upsertForm: (input) => run(() => c.forms.upsertForm.mutate(input)),
+      deleteForm: ({ kyteId }) =>
+        run(async () => {
+          await c.forms.deleteForm.mutate({ kyteId });
+          return { ok: true as const };
+        }),
+      regenerateEndpoint: ({ kyteId }) => run(() => c.forms.regenerateEndpoint.mutate({ kyteId })),
+      listSubmissions: ({ kyteId, status, includeSpam, search, limit, cursor }) =>
+        run(() => c.forms.listSubmissions.query({ kyteId, status, includeSpam, search, limit, cursor })),
+      getSubmission: ({ kyteId, submissionId }) =>
+        run(() => c.forms.getSubmission.query({ kyteId, submissionId })),
+      updateSubmission: (input) => run(() => c.forms.updateSubmission.mutate(input)),
+      deleteSubmission: ({ kyteId, submissionId }) =>
+        run(async () => {
+          await c.forms.deleteSubmission.mutate({ kyteId, submissionId });
+          return { ok: true as const };
+        }),
+      exportCsv: ({ kyteId }) => run(() => c.forms.exportCsv.query({ kyteId })),
+    },
 
     resolveKyteSummary: (kyteId) =>
       run(async () => {

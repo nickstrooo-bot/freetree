@@ -1,5 +1,5 @@
-import { getClickhouse } from "@kytelink/clickhouse";
 import { getDb } from "@kytelink/db";
+import { getAnalyticsStore } from "./analytics/store";
 import type { ImpersonationInfo, SessionInfo, TrpcContext } from "@kytelink/trpc";
 import { fromNodeHeaders } from "better-auth/node";
 import type { FastifyRequest } from "fastify";
@@ -80,7 +80,7 @@ export async function createTrpcContext({ req }: { req: FastifyRequest }): Promi
     ip: req.ip,
     redis: getRedis(),
     db: getRealStore(),
-    ch: getClickhouse(),
+    ch: getAnalyticsStore(),
     log: procedureLog,
   };
 }

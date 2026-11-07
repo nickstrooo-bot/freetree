@@ -34,6 +34,7 @@ import { registerReportRoute } from "./routes/report";
 import { registerCommerceRoutes } from "./routes/commerce";
 import { registerLiveStatusRoutes } from "./routes/live-status";
 import { registerEmailCaptureRoutes } from "./routes/email-capture";
+import { registerFormsRoutes } from "./routes/forms";
 
 function authRateClassFor(path: string): RateLimitClass | null {
   if (path.endsWith("/email-otp/send-verification-otp")) return "otp-send";
@@ -153,6 +154,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   registerCommerceRoutes(app);
   registerLiveStatusRoutes(app);
   registerEmailCaptureRoutes(app);
+  registerFormsRoutes(app);
   registerDevLogin(app);
   registerImpersonationRoutes(app);
 

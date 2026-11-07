@@ -54,7 +54,9 @@ function peakOf(values: number[]): number {
 export function LiveScreen() {
   const capabilities = useCapabilities();
 
-  if (!capabilities.analytics) {
+  // Live is raw ClickHouse SQL underneath — the SQLite store that serves
+  // seller analytics cannot answer it.
+  if (!capabilities.clickhouseAnalytics) {
     return (
       <>
         <PageHeader title="Live" description={DESCRIPTION} />

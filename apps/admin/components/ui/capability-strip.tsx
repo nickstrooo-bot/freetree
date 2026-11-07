@@ -2,6 +2,7 @@ import type { Capabilities } from "@kytelink/schemas";
 
 const LABELS: Record<keyof Capabilities, string> = {
   analytics: "Analytics",
+  clickhouseAnalytics: "ClickHouse analytics",
   uploads: "Uploads",
   emailDelivery: "Email delivery",
   moderation: "Moderation",

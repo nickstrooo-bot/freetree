@@ -49,7 +49,7 @@ export function likeNeedle(query: string): string {
 /**
  * Admins paste profile URLs straight from abuse emails. A URL never matches a
  * username column, so pull the handle out of anything URL-shaped
- * ("freetree.link/foo", "http://localhost:4000/@foo?x=1") and let callers match
+ * ("getfreetree.com/foo", "http://localhost:4000/@foo?x=1") and let callers match
  * on that too.
  */
 export function usernameFromUrlNeedle(needle: string): string | null {
@@ -57,7 +57,7 @@ export function usernameFromUrlNeedle(needle: string): string | null {
   const slash = value.indexOf("/");
   if (slash === -1) return null;
   const host = value.slice(0, slash);
-  // A dot ("freetree.link/foo") or a port ("localhost:4000/foo") marks a host;
+  // A dot ("getfreetree.com/foo") or a port ("localhost:4000/foo") marks a host;
   // anything else is plain text that happens to contain a slash.
   if (!host.includes(".") && !host.includes(":")) return null;
   value = value.slice(slash + 1).split(/[?#]/)[0] ?? "";

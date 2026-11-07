@@ -128,8 +128,39 @@ export interface CheckoutSessionInput {
    * When true, Stripe Checkout shows a promo-code field. Sellers create and
    * manage their codes in their own Stripe dashboard (Billing > Coupons) —
    * FreeTree never touches coupon definitions, just enables the field.
+   *
+   * MUTUAL EXCLUSION with the discount engine: the checkout route sets this
+   * to false whenever a FreeTree rule discounts the order (or adds a gift),
+   * so the same order can never be discounted twice — once by our engine
+   * and once by a Stripe coupon. Sellers with no FreeTree rules active are
+   * unaffected.
    */
   allowPromoCodes?: boolean;
+  /**
+   * Extra zero-priced (or priced) line items, e.g. Saleor-style GIFT reward
+   * lines from the discount engine. A gift line is a real product the buyer
+   * receives for $0 — it shows on the Stripe receipt, which is the point:
+   * the buyer can see what they got free.
+   */
+  extraLineItems?: Array<{
+    name: string;
+    description?: string | null;
+    amountCents: number;
+    quantity: number;
+  }>;
+  /**
+   * Discount-engine audit fields, echoed into the session metadata so the
+   * webhook / Stripe dashboard can reconcile what was discounted and why.
+   */
+  discountCents?: number;
+  couponCode?: string | null;
+  /**
+   * Gift-card audit fields: the card portion of this order (the Stripe
+   * charge is only the remainder — see applyGiftCardToTotals). Echoed so
+   * the webhook / dashboard can reconcile what the card paid.
+   */
+  giftCardCents?: number;
+  giftCardId?: string | null;
 }
 
 export interface CheckoutSessionResult {
@@ -166,6 +197,20 @@ export async function createCheckoutSession(
           },
           quantity: 1,
         },
+        // Gift lines (discount engine): zero-priced products the buyer gets
+        // free. Stripe accepts $0 line items; a gift is a real product on
+        // the receipt, not an invisible adjustment.
+        ...(input.extraLineItems ?? []).map((item) => ({
+          price_data: {
+            currency: input.currency,
+            unit_amount: item.amountCents,
+            product_data: {
+              name: item.name,
+              description: item.description ?? undefined,
+            },
+          },
+          quantity: item.quantity,
+        })),
       ],
       customer_email: input.buyerEmail ?? undefined,
       success_url: input.successUrl,
@@ -179,6 +224,14 @@ export async function createCheckoutSession(
       metadata: {
         freetree_purchase_id: input.purchaseId,
         freetree_fee_percent: String(feePercent),
+        ...(input.discountCents !== undefined
+          ? { freetree_discount_cents: String(input.discountCents) }
+          : {}),
+        ...(input.couponCode ? { freetree_coupon_code: input.couponCode } : {}),
+        ...(input.giftCardCents !== undefined
+          ? { freetree_gift_card_cents: String(input.giftCardCents) }
+          : {}),
+        ...(input.giftCardId ? { freetree_gift_card_id: input.giftCardId } : {}),
       },
     },
     { stripeAccount: input.stripeAccountId },

@@ -126,4 +126,52 @@ describe("ProfileView across all 12 themes", () => {
     expect(html).toContain('data-kytelink-icon=""');
     expect(html).toContain('data-icon-name="Twitter"');
   });
+
+  it("renders a rich photo link-card (image + title + description) for links with OG metadata", () => {
+    const content: ProfileContent = {
+      ...emptyProfileContent(),
+      displayName: "Card Seller",
+      links: [
+        {
+          title: "My article",
+          link: "https://example.com/article",
+          card: {
+            title: "The Great Article",
+            description: "What the article is about.",
+            image: "https://cdn.example.com/cover.jpg",
+            fetchedAt: "2026-11-07T00:00:00.000Z",
+          },
+        },
+      ],
+    };
+    const html = renderToStaticMarkup(<ProfileView content={content} />);
+    expect(html).toContain('data-link-card="rich"');
+    expect(html).toContain('data-link-card-image=""');
+    expect(html).toContain('src="https://cdn.example.com/cover.jpg"');
+    expect(html).toContain("My article");
+    expect(html).toContain("What the article is about.");
+  });
+
+  it("renders a text-only card description under the title when there is no image", () => {
+    const content: ProfileContent = {
+      ...emptyProfileContent(),
+      links: [
+        {
+          title: "No photo link",
+          link: "https://example.com/no-photo",
+          card: { description: "A page with words but no picture." },
+        },
+      ],
+    };
+    const html = renderToStaticMarkup(<ProfileView content={content} />);
+    expect(html).toContain('data-link-card="text"');
+    expect(html).not.toContain('data-link-card-image=""');
+    expect(html).toContain("A page with words but no picture.");
+  });
+
+  it("renders links without a card exactly as before (no card attributes)", () => {
+    const html = renderToStaticMarkup(<ProfileView content={richContent} />);
+    expect(html).not.toContain("data-link-card");
+    expect(html).not.toContain("data-link-card-image");
+  });
 });

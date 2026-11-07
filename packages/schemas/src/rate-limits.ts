@@ -66,6 +66,12 @@ export const RATE_LIMIT_CLASSES = {
   // double opt-in means a victim never gets subscribed without clicking.
   "email-capture-subscribe": [{ limit: 20, windowSec: MINUTE, subject: "ip" }],
   "email-capture-public": [{ limit: 600, windowSec: MINUTE, subject: "ip" }],
+  // FreeTree Forms: public submit is the abuse-sensitive one (someone could
+  // spam a seller's inbox or use the notification email as an oracle). Tight
+  // per-IP limit, same shape as email-capture-subscribe; the public block
+  // config read is generous like the other public reads.
+  "forms-submit": [{ limit: 20, windowSec: MINUTE, subject: "ip" }],
+  "forms-public": [{ limit: 600, windowSec: MINUTE, subject: "ip" }],
 } satisfies Record<string, readonly RateLimitRule[]>;
 
 export type RateLimitClass = keyof typeof RATE_LIMIT_CLASSES;

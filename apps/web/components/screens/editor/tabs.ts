@@ -1,4 +1,4 @@
-export const EDITOR_TABS = ["links", "bookings", "scheduled", "products", "emails", "design", "analytics", "settings"] as const;
+export const EDITOR_TABS = ["links", "bookings", "scheduled", "products", "emails", "forms", "design", "analytics", "settings"] as const;
 export type EditorTab = (typeof EDITOR_TABS)[number];
 
 export const TAB_LABELS: Record<EditorTab, string> = {
@@ -7,6 +7,7 @@ export const TAB_LABELS: Record<EditorTab, string> = {
   scheduled: "Scheduled",
   products: "Products",
   emails: "Email list",
+  forms: "Forms",
   design: "Design",
   analytics: "Analytics",
   settings: "Settings",

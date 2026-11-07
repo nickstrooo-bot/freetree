@@ -133,6 +133,54 @@ export interface EmailSubscriber {
   createdAt: string;
 }
 
+export type FormSubmissionStatus = "new" | "contacted" | "converted";
+
+export interface FormBlock {
+  id: string;
+  kyteId: string;
+  title: string;
+  description: string | null;
+  buttonText: string;
+  successText: string;
+  fields: Array<{
+    id: string;
+    type: "text" | "email" | "textarea" | "choice";
+    label: string;
+    required: boolean;
+    placeholder?: string;
+    options?: string[];
+    maxLength?: number;
+  }>;
+  endpointToken: string;
+  endpointPath: string;
+  notifyEmail: string | null;
+  active: boolean;
+  sortOrder: number;
+  submissionCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FormSubmission {
+  id: string;
+  formId: string;
+  payload: Record<string, string>;
+  status: FormSubmissionStatus;
+  spam: boolean;
+  notes: string | null;
+  followUpAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FormSubmissionCounts {
+  new: number;
+  contacted: number;
+  converted: number;
+  spam: number;
+  total: number;
+}
+
 interface CreateUploadResult {
   assetId: string;
   uploadUrl: string;
@@ -306,6 +354,50 @@ export interface ApiClient {
       limit?: number;
       cursor?: string;
     }): Promise<TipList>;
+  };
+  forms: {
+    getForm(input: { kyteId: string }): Promise<{ form: FormBlock | null }>;
+    upsertForm(input: {
+      kyteId: string;
+      title?: string;
+      description?: string | null;
+      buttonText?: string;
+      successText?: string;
+      fields: FormBlock["fields"];
+      notifyEmail?: string | null;
+      active?: boolean;
+      sortOrder?: number;
+    }): Promise<FormBlock>;
+    deleteForm(input: { kyteId: string }): Promise<{ ok: true }>;
+    regenerateEndpoint(input: {
+      kyteId: string;
+    }): Promise<{ endpointToken: string; endpointPath: string }>;
+    listSubmissions(input: {
+      kyteId: string;
+      status?: FormSubmissionStatus | "all";
+      includeSpam?: boolean;
+      search?: string;
+      limit?: number;
+      cursor?: string;
+    }): Promise<{
+      submissions: FormSubmission[];
+      nextCursor: string | null;
+      counts: FormSubmissionCounts;
+    }>;
+    getSubmission(input: {
+      kyteId: string;
+      submissionId: string;
+    }): Promise<{ submission: FormSubmission }>;
+    updateSubmission(input: {
+      kyteId: string;
+      submissionId: string;
+      status?: FormSubmissionStatus;
+      spam?: boolean;
+      notes?: string | null;
+      followUpAt?: string | null;
+    }): Promise<{ submission: FormSubmission }>;
+    deleteSubmission(input: { kyteId: string; submissionId: string }): Promise<{ ok: true }>;
+    exportCsv(input: { kyteId: string }): Promise<{ csv: string; filename: string }>;
   };
   resolveKyteSummary(kyteId: string): Promise<KyteSummary | null>;
 }

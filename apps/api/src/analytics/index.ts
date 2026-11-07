@@ -1,5 +1,4 @@
 import { getDb } from "@kytelink/db";
-import { getClickhouse } from "@kytelink/clickhouse";
 import type { AnalyticsSeam } from "../seams/analytics-seam";
 import { taggedLogger } from "../logger";
 import { createAnalyticsRouter } from "./analytics-router";
@@ -7,9 +6,10 @@ import { startBufferDrainWorker } from "./buffer-worker";
 import { ingestBeacon } from "./ingest-beacon";
 import { recordProductEvent } from "./record-event";
 import { getAnalyticsRedis } from "./redis-client";
+import { getAnalyticsStore } from "./store";
 
 const redis = getAnalyticsRedis();
-const ch = getClickhouse();
+const ch = getAnalyticsStore();
 const db = getDb();
 
 const log = taggedLogger("analytics");
