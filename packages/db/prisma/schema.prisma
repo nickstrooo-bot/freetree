@@ -200,6 +200,8 @@ model Kyte {
   products     Product[]
   emailCaptureBlock EmailCaptureBlock?
   formBlock    FormBlock?
+  discountRules DiscountRule[]
+  giftCards    GiftCard[]
 
   @@index([orgId])
 }
