@@ -12,6 +12,8 @@ import {
   discountRuleSchema,
   discountTargetSchema,
   discountTriggerSchema,
+  DiscountRuleKind,
+  DiscountTrigger,
   generateCouponsInputSchema,
   giftCardIssueInputSchema,
   giftCardReloadInputSchema,
@@ -600,7 +602,10 @@ export const commerceRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Discount rule not found." });
       }
       const merged = { ...existing, ...input.patch };
-      merged.mechanism = mechanismForRule(merged.kind, merged.trigger);
+      merged.mechanism = mechanismForRule(
+        merged.kind as DiscountRuleKind,
+        merged.trigger as DiscountTrigger,
+      );
       const checked = discountRuleSchema.safeParse(merged);
       if (!checked.success) {
         throw new TRPCError({ code: "BAD_REQUEST", message: checked.error.issues[0]?.message ?? "Invalid rule." });

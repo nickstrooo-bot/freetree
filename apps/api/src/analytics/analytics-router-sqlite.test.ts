@@ -10,7 +10,7 @@ const createCaller = createCallerFactory(
   createAnalyticsRouter({
     redis: {
       get: vi.fn(async () => null),
-      set: vi.fn(async () => "OK"),
+      set: vi.fn(async (): Promise<"OK"> => "OK"),
     },
   }),
 );

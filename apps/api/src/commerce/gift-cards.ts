@@ -210,7 +210,11 @@ export async function resolveGiftCardByCode(
  */
 export interface GiftCardBalanceDb {
   $queryRawUnsafe: (query: string, ...values: unknown[]) => Promise<Array<{ balanceCents: number; status: string }>>;
-  $transaction: <T>(fn: (tx: GiftCardBalanceDb & GiftCardLedgerDb & GiftCardRedemptionDb) => Promise<T>) => Promise<T>;
+  // tx is `any` on purpose: PrismaClient's $transaction is overloaded
+  // (array form + callback form), and a narrow tx type is not assignable
+  // to either overload's parameter. The engine functions type their own
+  // tx explicitly (see updateBalanceInTx), so nothing is lost here.
+  $transaction: <T>(fn: (tx: any) => Promise<T>) => Promise<T>;
 }
 
 export interface GiftCardLedgerDb {
@@ -455,10 +459,14 @@ export async function releaseGiftCardRedemption(
 
 export interface GiftCardIssueDb {
   giftCard: {
-    create: (args: { data: Record<string, unknown> }) => Promise<any>;
+    // data is `any`: Prisma's create takes the full GiftCardCreateInput,
+    // and a Record<string, unknown> payload is not assignable to it.
+    create: (args: { data: any }) => Promise<any>;
   };
   giftCardLedger: GiftCardLedgerDb["giftCardLedger"];
-  $transaction: <T>(fn: (tx: GiftCardIssueDb) => Promise<T>) => Promise<T>;
+  // tx is `any` — see GiftCardBalanceDb: Prisma's overloaded $transaction
+  // does not accept a narrow tx type.
+  $transaction: <T>(fn: (tx: any) => Promise<T>) => Promise<T>;
 }
 
 /**
@@ -564,22 +572,26 @@ export function computeGiftCardRefundShare(input: {
 export interface GiftCardRefundDb {
   purchase: {
     findFirst: (args: { where: { id: string } }) => Promise<any>;
-    update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<any>;
+    // data is `any`: Prisma's update takes the full PurchaseUpdateInput,
+    // and a Record<string, unknown> payload is not assignable to it.
+    update: (args: { where: { id: string }; data: any }) => Promise<any>;
   };
   refund: {
     findMany: (args: { where: { purchaseId: string } }) => Promise<Array<{ amountCents: number }>>;
-    create: (args: { data: Record<string, unknown> }) => Promise<any>;
+    create: (args: { data: any }) => Promise<any>;
   };
   orderAdjustment: {
-    create: (args: { data: Record<string, unknown> }) => Promise<any>;
+    create: (args: { data: any }) => Promise<any>;
   };
   giftCard: {
     findFirst: (args: { where: { id: string } }) => Promise<any>;
-    create: (args: { data: Record<string, unknown> }) => Promise<any>;
+    create: (args: { data: any }) => Promise<any>;
   };
   $queryRawUnsafe: GiftCardBalanceDb["$queryRawUnsafe"];
   giftCardLedger: GiftCardLedgerDb["giftCardLedger"];
-  $transaction: <T>(fn: (tx: GiftCardRefundDb) => Promise<T>) => Promise<T>;
+  // tx is `any` — see GiftCardBalanceDb: Prisma's overloaded $transaction
+  // does not accept a narrow tx type.
+  $transaction: <T>(fn: (tx: any) => Promise<T>) => Promise<T>;
 }
 
 export interface RecordRefundInput {

@@ -6,6 +6,11 @@ const CAPABILITY_COPY: Record<keyof Capabilities, { label: string; env: string; 
     env: "CLICKHOUSE_URL",
     fallback: "Beacon endpoints return 202 and drop. No Analytics tab. Everything else works.",
   },
+  clickhouseAnalytics: {
+    label: "ClickHouse analytics",
+    env: "CLICKHOUSE_URL",
+    fallback: "Admin Live and Traffic screens fall back to the SQLite store. Seller analytics still works.",
+  },
   uploads: {
     label: "Uploads",
     env: "AWS_*",
@@ -40,6 +45,7 @@ const CAPABILITY_COPY: Record<keyof Capabilities, { label: string; env: string; 
 
 const ORDER: (keyof Capabilities)[] = [
   "analytics",
+  "clickhouseAnalytics",
   "uploads",
   "emailDelivery",
   "moderation",

@@ -580,20 +580,11 @@ export async function resolveCoupon(
  */
 export interface CouponRedeemDb {
   $executeRawUnsafe: (query: string, ...values: unknown[]) => Promise<number>;
-  $transaction: <T>(
-    fn: (
-      tx: CouponRedeemDb & {
-        couponRedemption: {
-          create: (args: {
-            data: { couponId: string; orgId: string; buyerEmail: string | null; purchaseId: string | null };
-          }) => Promise<unknown>;
-          deleteMany: (args: {
-            where: { couponId: string; purchaseId: string | null };
-          }) => Promise<unknown>;
-        };
-      },
-    ) => Promise<T>,
-  ) => Promise<T>;
+  // tx is `any` on purpose: PrismaClient's $transaction is overloaded
+  // (array form + callback form), and a narrow tx type is not assignable
+  // to either overload's parameter. The redeem/release functions only
+  // call $executeRawUnsafe + couponRedemption.create on tx, unchanged.
+  $transaction: <T>(fn: (tx: any) => Promise<T>) => Promise<T>;
 }
 
 export interface RedeemCouponInput {

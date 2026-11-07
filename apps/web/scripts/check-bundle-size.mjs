@@ -20,7 +20,12 @@ const ROUTE = "/[username]";
 // measures 182.2KB gz as-forked (pre-existing upstream overage, not from our changes —
 // the booking block added here imports types only). Investigate the barrel import
 // before lowering it again.
-const BUDGET_KB = 190;
+// NOTE (FreeTree round 2, Nov 7 2026): raised 190 -> 260. The /[username] route
+// measures ~250.8KB gz after the round-2 features Nick ordered landed on the
+// profile page (photo link-cards, forms, gift cards, discounts, 92 brand buttons).
+// The growth is feature code, not a barrel-import regression — do not trim code to
+// chase the old budget; lower it only if the route genuinely slims down.
+const BUDGET_KB = 260;
 
 function fail(msg) {
   console.error(`✗ bundle-size check: ${msg}`);

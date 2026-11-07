@@ -170,16 +170,17 @@ describe("commerce.issueGiftCards / listGiftCards", () => {
 
     const listed = await caller.commerce.listGiftCards({ kyteId: KYTE_ID });
     expect(listed.giftCards).toHaveLength(1);
-    expect(listed.giftCards[0]).toMatchObject({
+    const first = listed.giftCards[0]!;
+    expect(first).toMatchObject({
       balanceCents: 2500,
       initialBalanceCents: 2500,
       status: "ACTIVE",
       issuedTo: "buyer@example.com",
     });
-    expect(listed.giftCards[0].codeHint).toBe(result.cards[0].code.replace(/-/g, "").slice(-4));
+    expect(first.codeHint).toBe(result.cards[0].code.replace(/-/g, "").slice(-4));
     // No plaintext code, no hash, anywhere in the list response.
-    expect("code" in listed.giftCards[0]).toBe(false);
-    expect("codeHash" in listed.giftCards[0]).toBe(false);
+    expect("code" in first).toBe(false);
+    expect("codeHash" in first).toBe(false);
   });
 
   it("issues a bulk batch with distinct codes and one ledger row each", async () => {
