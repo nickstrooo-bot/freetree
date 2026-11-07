@@ -2,7 +2,7 @@ const LOCAL = "http://localhost:5003";
 const REMOTE_ONLY_PREFIXES = ["u/"];
 
 function getRemote(): string {
-  return process.env.NEXT_PUBLIC_CDN_URL ?? "https://cdn.freetree.link";
+  return process.env.NEXT_PUBLIC_CDN_URL ?? "https://cdn.getfreetree.com";
 }
 
 export interface GetCdnUrlOptions {

@@ -87,7 +87,7 @@ export function SettingsTab() {
         </CardHeader>
         <CardContent>
           <TextInput
-            leftAddon="freetree.link/"
+            leftAddon="getfreetree.com/"
             value={username}
             disabled={!canChangeUsername}
             onChange={(event) => setUsername(event.target.value)}

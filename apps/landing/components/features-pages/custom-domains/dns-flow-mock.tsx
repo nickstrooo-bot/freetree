@@ -3,7 +3,7 @@ import { NEUTRAL, STATUS } from "@kytelink/ui";
 
 const RECORDS: DnsRecord[] = [
   { type: "A", name: "@", value: "76.76.21.21" },
-  { type: "CNAME", name: "www", value: "cname.freetree.link" },
+  { type: "CNAME", name: "www", value: "cname.getfreetree.com" },
 ];
 
 const STEPS: { status: DomainStatus; label: string }[] = [

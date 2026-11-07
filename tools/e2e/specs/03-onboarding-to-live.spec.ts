@@ -24,7 +24,7 @@ test.describe("onboarding to live", () => {
     await page.getByRole("button", { name: "Go live 🎉" }).click();
 
     await expect(page.getByRole("heading", { name: "You're live!" })).toBeVisible({ timeout: 20000 });
-    await expect(page.getByText(`freetree.link/${slug}`)).toBeVisible();
+    await expect(page.getByText(`getfreetree.com/${slug}`)).toBeVisible();
 
     await page.goto(`/${slug}`);
     await expect(page.locator("[data-kytelink-profile-view]")).toBeVisible({ timeout: 20000 });

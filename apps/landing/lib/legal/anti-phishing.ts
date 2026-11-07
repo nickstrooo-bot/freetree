@@ -8,14 +8,14 @@ export const antiPhishingStatement: LegalDocument = {
   title: "Anti-phishing statement",
   lastUpdated: "2026-08-14",
   intro:
-    "FreeTree has been used to run phishing pages. Not as an edge case — at volume, for a long stretch of the product's first version. This page is our public account of it: what went wrong, what we rebuilt, and exactly how every page published on freetree.link is reviewed today. It describes the system that is actually running, in the detail needed to check the claim.",
+    "FreeTree has been used to run phishing pages. Not as an edge case — at volume, for a long stretch of the product's first version. This page is our public account of it: what went wrong, what we rebuilt, and exactly how every page published on getfreetree.com is reviewed today. It describes the system that is actually running, in the detail needed to check the claim.",
   sections: [
     {
       heading: "What went wrong",
       paragraphs: [
         "The first version of FreeTree gave anyone a free, instantly public page on a domain that had built up real reputation. That combination is attractive to scammers, and they took it. The recurring pattern was impersonation: a page dressed up as a telecom provider, an internet provider, a bank, a delivery service, or a crypto exchange — usually posing as its support desk, login screen, account-verification step, or recovery flow — with links pointing at credential-harvesting sites.",
         "The underlying failure was structural, not accidental. Moderation in the first version was reactive: a page went live the moment it was published and stayed live until a human happened to report it. Nothing was checked at publish time, and nothing re-checked a page that was published clean and then quietly edited into a phishing page afterwards. That second gap is the one most abuse actually walked through.",
-        "We are stating this plainly rather than quietly patching it, because anyone deciding whether to trust a freetree.link link deserves to know both what happened and what specifically changed.",
+        "We are stating this plainly rather than quietly patching it, because anyone deciding whether to trust a getfreetree.com link deserves to know both what happened and what specifically changed.",
       ],
     },
     {
@@ -97,7 +97,7 @@ export const antiPhishingStatement: LegalDocument = {
     {
       heading: "Appeals",
       paragraphs: [
-        "There is one appeal path, and it is the same in every place a suspension appears — the public notice, the banner in the editor, and the email: the form at freetree.link/appeal. No account needed, it works for a page, an organization, or an account, and a person reads every one. We answer them fast, because a wrongly suspended page is our mistake to fix, not yours to wait out.",
+        "There is one appeal path, and it is the same in every place a suspension appears — the public notice, the banner in the editor, and the email: the form at getfreetree.com/appeal. No account needed, it works for a page, an organization, or an account, and a person reads every one. We answer them fast, because a wrongly suspended page is our mistake to fix, not yours to wait out.",
         "We accept that under-blocking means some legitimate pages will still be caught. When that happens the fix is a restore, and the page returns with its content, links, and analytics intact.",
         `And if you would rather not depend on our judgement at all, you don't have to. FreeTree is open source under the MIT License — [running your own copy](${GITHUB_REPO_URL}) is always an option, and nothing on this page applies to it.`,
       ],
@@ -105,7 +105,7 @@ export const antiPhishingStatement: LegalDocument = {
     {
       heading: "Reporting a page",
       paragraphs: [
-        "Anyone can report a FreeTree page at freetree.link/report, without an account. Tell us the username and what you saw.",
+        "Anyone can report a FreeTree page at getfreetree.com/report, without an account. Tell us the username and what you saw.",
         "Reports never automatically suspend anything, and that is deliberate — an auto-suspending report button just hands the takedown control to whoever files the most reports. A report opens a case in the same human review queue, where it is treated as a request to suspend and decided by a reviewer.",
         "The form always responds the same way regardless of what you submit. It will not confirm whether a username exists, so it cannot be used to probe the platform.",
       ],
@@ -113,8 +113,8 @@ export const antiPhishingStatement: LegalDocument = {
     {
       heading: "What this statement does not cover",
       paragraphs: [
-        "This describes the hosted service at freetree.link. That is the only domain it covers.",
-        "FreeTree is open-source software under the MIT License, and anyone can run their own copy. Self-hosted instances ship with the review provider turned off by default and are operated entirely by whoever runs them — we do not review, monitor, or have any control over pages on someone else's deployment. A page is only covered by this statement if it is served from freetree.link.",
+        "This describes the hosted service at getfreetree.com. That is the only domain it covers.",
+        "FreeTree is open-source software under the MIT License, and anyone can run their own copy. Self-hosted instances ship with the review provider turned off by default and are operated entirely by whoever runs them — we do not review, monitor, or have any control over pages on someone else's deployment. A page is only covered by this statement if it is served from getfreetree.com.",
         `The code that performs everything described here is in [the public repository](${GITHUB_REPO_URL}), including the keyword lists, the lookalike-domain detection, the review pipeline, and the exact policy given to the model. You do not have to take this page's word for any of it.`,
       ],
     },
@@ -129,7 +129,7 @@ export const antiPhishingStatement: LegalDocument = {
     {
       heading: "Contact",
       paragraphs: [
-        "Report a page at freetree.link/report. Appeal a suspension at freetree.link/appeal.",
+        "Report a page at getfreetree.com/report. Appeal a suspension at getfreetree.com/appeal.",
         `For anything else about this statement, including security disclosures and press enquiries, email ${LEGAL_CONTACT_EMAIL}.`,
       ],
     },

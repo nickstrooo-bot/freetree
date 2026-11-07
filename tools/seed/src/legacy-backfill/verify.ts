@@ -316,7 +316,7 @@ export async function verify(options: {
     manifest.push({
       userId,
       username,
-      oldUrl: sourceRow.username ? `https://freetree.link/${sourceRow.username}` : null,
+      oldUrl: sourceRow.username ? `https://getfreetree.com/${sourceRow.username}` : null,
       newUrl: username ? `${stagingBaseUrl}/${username}` : null,
       old: contentToProfile(oldContent, sourceRow.pfp !== null),
       new: rowToProfile(newRow, cdnBaseUrl),

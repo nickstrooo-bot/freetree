@@ -118,7 +118,7 @@ export function ReportForm() {
                 setUsernameOrUrl(event.target.value);
                 if (fieldError) setFieldError(null);
               }}
-              placeholder="freetree.link/username"
+              placeholder="getfreetree.com/username"
               aria-invalid={fieldError ? true : undefined}
               aria-describedby={fieldError ? "usernameOrUrl-error" : undefined}
               className={`${FIELD_BASE} ${fieldError ? "border-danger" : "border-border"}`}

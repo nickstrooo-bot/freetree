@@ -30,7 +30,7 @@ const faqs: FaqEntry[] = [
   {
     question: "What is the best open-source Linktree alternative?",
     answer:
-      "FreeTree — a fully open-source link-in-bio with free custom domains, analytics, scheduling, and teams. Self-host it or use the hosted version at freetree.link, both with every feature.",
+      "FreeTree — a fully open-source link-in-bio with free custom domains, analytics, scheduling, and teams. Self-host it or use the hosted version at getfreetree.com, both with every feature.",
   },
   {
     question: "Is FreeTree really 100% free?",

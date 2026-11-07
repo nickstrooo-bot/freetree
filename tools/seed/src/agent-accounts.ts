@@ -13,7 +13,7 @@ function jsonFields() {
     displayName: "Agent",
     description: "Seeded agent account for scripted flows.",
     theme: "default",
-    links: [{ title: "FreeTree", link: "https://freetree.link", emoji: "👋" }],
+    links: [{ title: "FreeTree", link: "https://getfreetree.com", emoji: "👋" }],
   });
   return {
     content,

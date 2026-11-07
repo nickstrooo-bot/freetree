@@ -10,12 +10,12 @@ export const termsOfService: LegalDocument = {
   title: "Terms of service",
   lastUpdated: "2026-07-26",
   intro:
-    "These are the terms for using FreeTree, the hosted version of the product at freetree.link, operated by the team behind FreeTree. Read them once — they're short on purpose. Using the hosted service means you agree to them.",
+    "These are the terms for using FreeTree, the hosted version of the product at getfreetree.com, operated by the team behind FreeTree. Read them once — they're short on purpose. Using the hosted service means you agree to them.",
   sections: [
     {
       heading: "The service",
       paragraphs: [
-        "FreeTree lets you build a link-in-bio page — a kyte — and share it from one link. The hosted service at freetree.link is free to use. It's free today and we intend to keep it that way; if that ever changes we'll tell you before it affects you, and you'll never be charged without agreeing first.",
+        "FreeTree lets you build a link-in-bio page — a kyte — and share it from one link. The hosted service at getfreetree.com is free to use. It's free today and we intend to keep it that way; if that ever changes we'll tell you before it affects you, and you'll never be charged without agreeing first.",
         "Free doesn't mean infinite. There are fair-use limits on how many kytes and teammates a workspace can have, how many workspaces you can own or join, and how much you can upload. We show you the current numbers in the product and tell you when you reach one.",
         'Published kytes carry a small "made with kytelink" link by default. Clicking it tells us which kyte sent the visitor, so we can see what\'s driving signups. You can turn the watermark off in your settings.',
         "FreeTree is also open-source software, released under the MIT License. If you'd rather run your own copy on your own infrastructure, you can — we don't operate your deployment, and you're responsible for its uptime and the data it collects. The MIT License governs the code; the intellectual property section below still applies to our name and logo.",
@@ -70,7 +70,7 @@ export const termsOfService: LegalDocument = {
     {
       heading: "Reporting a problem",
       paragraphs: [
-        "To report a kyte that impersonates someone, runs a scam, hosts illegal content, or infringes your rights, use the report form at freetree.link/report or email " +
+        "To report a kyte that impersonates someone, runs a scam, hosts illegal content, or infringes your rights, use the report form at getfreetree.com/report or email " +
           LEGAL_CONTACT_EMAIL +
           ".",
         "For a copyright claim, tell us what work was infringed, where it appears on FreeTree, how to reach you, and confirm in good faith that you're the rightsholder or authorised to act for them. We remove infringing content, and accounts that infringe repeatedly are closed.",
@@ -81,7 +81,7 @@ export const termsOfService: LegalDocument = {
       paragraphs: [
         "We can suspend a kyte that violates acceptable use. For serious cases — phishing, malware, illegal content — we may act without advance notice. For everything else, we'll try to tell you why and give you a chance to fix it. In serious or repeated cases we suspend the whole workspace, or the account, rather than one page — that takes every kyte you own offline.",
         "A suspension makes things read-only; it doesn't delete them. A suspended account can still sign in and read its own data, the recorded reason is shown to you, and nothing expires on its own: a suspension stays until a person has reviewed it, and restoring puts everything back as it was.",
-        "If you think we've got it wrong, appeal at freetree.link/appeal — a person reads every appeal and we answer fast. " +
+        "If you think we've got it wrong, appeal at getfreetree.com/appeal — a person reads every appeal and we answer fast. " +
           LEGAL_CONTACT_EMAIL +
           " also works.",
         "You can stop using FreeTree whenever you want, and you can ask us to delete your kyte or your account (see the privacy policy for how, and for what we keep afterward). Deletion is permanent.",

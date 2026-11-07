@@ -24,9 +24,9 @@ function buildAuth() {
   const crossSubdomain = isCrossSubdomainAuth(config);
 
   // WebAuthn RP ID is pinned to the apex domain (never the api. host where better-auth is
-  // mounted) so credentials work on freetree.link and survive an auth-host move. Local
+  // mounted) so credentials work on getfreetree.com and survive an auth-host move. Local
   // dev/agent uses "localhost" — WebAuthn ignores ports (doc 05).
-  const passkeyRpId = crossSubdomain ? "freetree.link" : "localhost";
+  const passkeyRpId = crossSubdomain ? "getfreetree.com" : "localhost";
   const passkeyOrigins = Array.from(
     new Set(
       [config.webBaseUrl, config.landingOrigin, ...config.allowedOrigins, ...config.adminOrigins].filter(
@@ -115,7 +115,7 @@ function buildAuth() {
     advanced: {
       cookiePrefix: config.agentMode ? "kyte_agent" : "kyte",
       ...(crossSubdomain
-        ? { crossSubDomainCookies: { enabled: true, domain: ".freetree.link" } }
+        ? { crossSubDomainCookies: { enabled: true, domain: ".getfreetree.com" } }
         : {}),
       defaultCookieAttributes: { httpOnly: true, sameSite: "lax", secure: crossSubdomain },
     },

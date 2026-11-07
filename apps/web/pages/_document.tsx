@@ -2,8 +2,8 @@ import { Head, Html, Main, NextScript } from "next/document";
 import { getCdnUrl } from "@kytelink/cdn";
 import { ACCENT } from "@kytelink/ui";
 
-const CDN_URL = process.env.NEXT_PUBLIC_CDN_URL ?? "https://cdn.freetree.link";
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://api.freetree.link";
+const CDN_URL = process.env.NEXT_PUBLIC_CDN_URL ?? "https://cdn.getfreetree.com";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://api.getfreetree.com";
 
 export function Document() {
   return (

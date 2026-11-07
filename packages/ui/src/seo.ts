@@ -1,6 +1,6 @@
 import type { DefaultSeoProps, NextSeoProps } from "next-seo";
 
-export const KYTELINK_ORIGIN = "https://freetree.link";
+export const KYTELINK_ORIGIN = "https://getfreetree.com";
 export const GITHUB_OWNER = "nickstrooo-bot";
 export const GITHUB_REPO = "freetree";
 export const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;

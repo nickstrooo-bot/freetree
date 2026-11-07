@@ -11,7 +11,7 @@ export interface GoLiveStepProps {
 export function GoLiveStep({ username }: GoLiveStepProps) {
   const router = useRouter();
   const { copied, copy } = useCopied();
-  const url = `freetree.link/${username}`;
+  const url = `getfreetree.com/${username}`;
 
   return (
     <div className="flex flex-col items-center gap-6 text-center">

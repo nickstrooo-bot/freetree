@@ -1,6 +1,6 @@
 export type EmailProviderKind = "console" | "smtp" | "resend";
 
-export const DEFAULT_EMAIL_FROM = "FreeTree <auth@mail.freetree.link>";
+export const DEFAULT_EMAIL_FROM = "FreeTree <auth@mail.getfreetree.com>";
 
 interface SmtpConfig {
   host: string;

@@ -25,7 +25,7 @@ export function buildFounderProfileContent(
     avatar: { url: "brand/nick.png", lqip: null },
     icons: [{ name: "Twitter" }, { name: "Github" }, { name: "Instagram" }],
     links: [
-      { title: "freetree.link", link: "https://freetree.link" },
+      { title: "getfreetree.com", link: "https://getfreetree.com" },
       { title: "kytelink on github", link: "https://github.com/aleemrehmtulla/kytelink" },
       { title: "plz star", link: "https://github.com/aleemrehmtulla/kytelink" },
     ],

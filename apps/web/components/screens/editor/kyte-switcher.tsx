@@ -85,7 +85,7 @@ export function KyteSwitcher({ onSwitchKyte }: KyteSwitcherProps) {
                     {k.displayName || (k.username ? `@${k.username}` : "Untitled")}
                   </span>
                   <span className="text-faint truncate text-[11px]">
-                    {k.username ? `freetree.link/${k.username}` : "unpublished"}
+                    {k.username ? `getfreetree.com/${k.username}` : "unpublished"}
                     {org!.personal ? " · personal" : ""}
                   </span>
                 </span>

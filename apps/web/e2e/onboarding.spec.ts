@@ -18,5 +18,5 @@ test("new user completes the publish-ASAP wizard", async ({ page }) => {
   await page.getByRole("button", { name: "Go live", exact: true }).click();
 
   await expect(page.getByRole("heading", { name: "You're live!" })).toBeVisible();
-  await expect(page.getByText(`freetree.link/${slug}`)).toBeVisible();
+  await expect(page.getByText(`getfreetree.com/${slug}`)).toBeVisible();
 });

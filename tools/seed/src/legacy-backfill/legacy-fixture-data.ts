@@ -6,7 +6,7 @@ export const DEAD_IBB_LINK_IMAGE = "https://i.ibb.co/gone/logo.png";
 export const IMAGEDELIVERY_PFP_V2 = "https://imagedelivery.net/abc123/avatar-github-v2/public";
 export const DELTA_EDITED_USER_IDS = ["u_google_full", "u_github_full"] as const;
 
-export const FIXTURE_ADMIN_EMAIL = "founder@freetree.link";
+export const FIXTURE_ADMIN_EMAIL = "founder@getfreetree.com";
 
 export type LegacyUserRow = {
   id: string;

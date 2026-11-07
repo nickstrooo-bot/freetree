@@ -97,7 +97,7 @@ export function EditorHeader({ onSwitchKyte }: EditorHeaderProps) {
               className={cn("size-[7px] rounded-full", dirty ? "bg-faint" : "bg-success")}
               aria-hidden
             />
-            freetree.link/{username}
+            getfreetree.com/{username}
             {copied ? (
               <Check className="size-3.5 text-success" />
             ) : (
@@ -173,7 +173,7 @@ export function EditorHeader({ onSwitchKyte }: EditorHeaderProps) {
                 <Share2 />
                 <span className="flex flex-col">
                   <span className="font-medium text-ink">Share link</span>
-                  <span className="text-[11px] text-faint">Copy freetree.link/{username}</span>
+                  <span className="text-[11px] text-faint">Copy getfreetree.com/{username}</span>
                 </span>
               </DropdownMenuItem>
             ) : null}

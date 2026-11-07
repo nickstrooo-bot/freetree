@@ -2,7 +2,7 @@ import { STATIC_SITEMAP_PATHS } from "@kytelink/schemas";
 import { publicWebUrl } from "./env";
 
 function cdnBase(): string {
-  return (process.env.NEXT_PUBLIC_CDN_URL ?? "https://cdn.freetree.link").replace(/\/+$/, "");
+  return (process.env.NEXT_PUBLIC_CDN_URL ?? "https://cdn.getfreetree.com").replace(/\/+$/, "");
 }
 
 function escapeXml(value: string): string {

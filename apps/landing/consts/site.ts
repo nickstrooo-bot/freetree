@@ -3,7 +3,7 @@ export { GITHUB_OWNER, GITHUB_REPO, GITHUB_REPO_URL } from "@kytelink/ui";
 export const SELF_HOSTING_PATH = "/self-hosting";
 export const FOUNDER_TWITTER_URL = "https://x.com/Nick173490";
 export const FOUNDER_GITHUB_URL = "https://github.com/nickstrooo-bot";
-export const FOUNDER_SITE_URL = "https://freetree.link";
+export const FOUNDER_SITE_URL = "https://getfreetree.com";
 
 export const HOME_TITLE = "FreeTree — Free Linktree Alternative | Your Links. Free Forever.";
 export const HOME_DESCRIPTION =
@@ -20,11 +20,11 @@ export const PRODUCT_FEATURES = [
 
 // Absolute links into the web zone — landing never mounts auth screens itself.
 // Server-only WEB_BASE_URL isn't reachable from the browser, and in production
-// freetree.link resolves these paths via the multi-zone rewrite either way.
+// getfreetree.com resolves these paths via the multi-zone rewrite either way.
 export const WEB_BASE_URL =
   process.env.NEXT_PUBLIC_WEB_URL ??
   (process.env.NODE_ENV === "production"
-    ? "https://freetree.link"
+    ? "https://getfreetree.com"
     : "http://localhost:3000");
 export const SIGNUP_URL = `${WEB_BASE_URL}/signup`;
 export const LOGIN_URL = `${WEB_BASE_URL}/login`;

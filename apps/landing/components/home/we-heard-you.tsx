@@ -55,7 +55,7 @@ const ITEMS: HeardItem[] = [
     complaint: "Support that never answers?",
     answer: "A human answers here.",
     detail:
-      "No login loops that last for months, no AI auto-replies that solve nothing. We're small enough that a real person reads your message: support@freetree.link.",
+      "No login loops that last for months, no AI auto-replies that solve nothing. We're small enough that a real person reads your message: support@getfreetree.com.",
     icon: "🎧",
   },
 ];

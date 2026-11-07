@@ -61,6 +61,6 @@ test.describe("decideForeignHost", () => {
   test("host normalization strips port and www", () => {
     expect(normalizeHost("WWW.Kyte.Bio:3000")).toBe("freetree.bio");
     expect(isVanityHost("www.freetree.page")).toBe(true);
-    expect(isVanityHost("freetree.link")).toBe(false);
+    expect(isVanityHost("getfreetree.com")).toBe(false);
   });
 });

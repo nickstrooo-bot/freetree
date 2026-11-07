@@ -10,7 +10,7 @@ export const privacyPolicy: LegalDocument = {
   title: "Privacy policy",
   lastUpdated: "2026-07-26",
   intro:
-    "This covers what FreeTree collects on the hosted service at freetree.link, why, and how to control it. It's operated by the team behind FreeTree. Written for humans, not lawyers.",
+    "This covers what FreeTree collects on the hosted service at getfreetree.com, why, and how to control it. It's operated by the team behind FreeTree. Written for humans, not lawyers.",
   sections: [
     {
       heading: "What we collect",
@@ -19,7 +19,7 @@ export const privacyPolicy: LegalDocument = {
         "Profile content: whatever you put in your kyte — your username, display name, description, links, social icons and the handles behind them, theme, font, color and background choices, SEO title and description, any address you set your kyte to forward visitors to, any custom domain you connect, and any avatar, link image, or preview image you upload. If you schedule a publish for later, we store a snapshot of the kyte as it was when you scheduled it, along with the timezone you chose.",
         "Preview links: if you share a draft for review, we store the link's token and its passcode so the editor can show them to you again whenever you reopen the panel. Treat that passcode as a share code rather than a password — it is stored in a readable form, and anyone holding the link and the code can see the draft.",
         "Team info: if you invite someone to a shared workspace, we store the email address you invite, the role and page access you grant, who sent the invite, and the membership that results. We also keep an audit record of significant actions in a workspace — who invited whom, who changed access, who published — so account owners can see what happened. Those records include the email address that was invited, and we keep them after the invite itself is gone. While teammates are editing together, we briefly note who is present on a page.",
-        "Analytics: page views and link clicks on published kytes, plus a small set of product events — for example completing an onboarding step, publishing, adding a link, or clicking the FreeTree watermark on someone's page. We also record a page-view event when you visit freetree.link itself, including these legal pages. We don't run third-party ad trackers.",
+        "Analytics: page views and link clicks on published kytes, plus a small set of product events — for example completing an onboarding step, publishing, adding a link, or clicking the FreeTree watermark on someone's page. We also record a page-view event when you visit getfreetree.com itself, including these legal pages. We don't run third-party ad trackers.",
         "Safety records: when a page is reviewed, automatically or by a person, we keep the outcome, the reason, the categories it was judged against, and the signals behind the decision. If someone reports a page, we keep the report, what they wrote, and a hashed form of the reporter's IP address so we can spot coordinated or repeated false reporting. We keep these records separately from the page itself, so they survive after the page is gone. We also record when an account is suspended or restored, and why.",
         "Session and device records: when you sign in, we record the session, along with the IP address and browser user-agent it was created from, so we can operate the service and investigate account compromise. Those records are deleted when the session expires.",
       ],
@@ -43,7 +43,7 @@ export const privacyPolicy: LegalDocument = {
     {
       heading: "Cookies and local storage",
       paragraphs: [
-        "The marketing site (freetree.link) sets one first-party cookie, kyte_ref, for 24 hours, to attribute a signup to the kyte whose watermark link you clicked. It contains a username, nothing personal, and expires automatically.",
+        "The marketing site (getfreetree.com) sets one first-party cookie, kyte_ref, for 24 hours, to attribute a signup to the kyte whose watermark link you clicked. It contains a username, nothing personal, and expires automatically.",
         "The app uses a signed, http-only session cookie to keep you logged in, marked secure and same-site over HTTPS. Signing in also stores your user identifier and email address in your browser, in local storage and in a companion cookie, so the editor can load your account immediately — unlike the session cookie, that companion value is readable by scripts on the page and is not what actually authenticates you. The app additionally sets short-lived first-party cookies that the sign-in flow needs, such as an OAuth state cookie, remembers which kyte you last had open, and keeps small interface preferences locally.",
         "There are no third-party analytics, advertising, or error-tracking cookies anywhere on the hosted service, and no third-party trackers or tag managers. Fonts are served by us rather than fetched from another company.",
       ],
@@ -114,8 +114,8 @@ export const privacyPolicy: LegalDocument = {
     {
       heading: "Self-hosted instances",
       paragraphs: [
-        "If you're using a self-hosted copy of FreeTree rather than freetree.link, this policy doesn't apply — the operator of that instance controls data collection and processing and is the controller of that data.",
-        "One exception worth naming: pages served by a self-hosted instance carry a \"made with kytelink\" watermark by default, and it links here. If one of that instance's visitors clicks it, we see that visit the same way we'd see any other visit to freetree.link. Operators who don't want that can remove the watermark.",
+        "If you're using a self-hosted copy of FreeTree rather than getfreetree.com, this policy doesn't apply — the operator of that instance controls data collection and processing and is the controller of that data.",
+        "One exception worth naming: pages served by a self-hosted instance carry a \"made with kytelink\" watermark by default, and it links here. If one of that instance's visitors clicks it, we see that visit the same way we'd see any other visit to getfreetree.com. Operators who don't want that can remove the watermark.",
       ],
     },
     {

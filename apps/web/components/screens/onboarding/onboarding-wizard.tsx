@@ -117,7 +117,7 @@ export function OnboardingWizard() {
       <div className="flex items-center justify-between px-4 py-3 sm:px-6">
         <a
           href={publicLandingUrl()}
-          aria-label="Back to freetree.link"
+          aria-label="Back to getfreetree.com"
           className="-ml-2 flex size-9 items-center justify-center rounded-pill text-tertiary transition-colors hover:bg-tint hover:text-ink"
         >
           <ArrowLeft className="size-4" />

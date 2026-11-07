@@ -225,7 +225,7 @@ async function runVerify(env: NodeJS.ProcessEnv, live: boolean): Promise<boolean
       beacon: real?.beacon ?? seams.beacon,
       adminEmails: config.adminEmails,
       cdnBaseUrl: config.cdnBaseUrl,
-      stagingBaseUrl: env.STAGING_BASE_URL ?? "https://staging.freetree.link",
+      stagingBaseUrl: env.STAGING_BASE_URL ?? "https://staging.getfreetree.com",
     });
     await mkdir(config.manifestDir, { recursive: true });
     await writeFile(join(config.manifestDir, "visual-diff-manifest.json"), JSON.stringify(manifest, null, 2), "utf8");

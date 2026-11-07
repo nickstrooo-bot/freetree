@@ -235,7 +235,7 @@ function KyteCard({ kyte, onDelete }: { kyte: KyteSummary; onDelete: () => void 
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-ink">{name}</p>
               {kyte.username ? (
-                <p className="truncate text-xs text-faint">freetree.link/{kyte.username}</p>
+                <p className="truncate text-xs text-faint">getfreetree.com/{kyte.username}</p>
               ) : (
                 <p className="truncate text-xs text-faint">No link claimed yet</p>
               )}

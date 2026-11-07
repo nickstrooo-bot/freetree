@@ -92,7 +92,7 @@ export function CreateKyteDialog({ orgId, onClose, onCreated }: CreateKyteDialog
             label="Link"
             placeholder="logan"
             value={username}
-            leftAddon="freetree.link/"
+            leftAddon="getfreetree.com/"
             status={
               trimmedUsername.length === 0
                 ? "default"

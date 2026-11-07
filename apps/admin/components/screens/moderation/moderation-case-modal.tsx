@@ -192,7 +192,7 @@ export function ModerationCaseModal({ onClose, onOpened }: ModerationCaseModalPr
                 type="text"
                 value={raw}
                 onChange={(event) => setRaw(event.target.value)}
-                placeholder="@name, name, or freetree.link/name"
+                placeholder="@name, name, or getfreetree.com/name"
                 autoComplete="off"
                 spellCheck={false}
                 className={`mt-1.5 ${FIELD}`}

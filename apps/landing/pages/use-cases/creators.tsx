@@ -14,7 +14,7 @@ const sections = [
   {
     heading: "Live before your coffee's done",
     paragraphs: [
-      "Getting online shouldn't be a project. Claim freetree.link/yourname, pick one of twelve themes, drop in your links, and paste the URL into your bios — the whole thing takes about a minute. There's no page builder to wrestle, no design software to learn, and no watermark or \"upgrade to remove branding\" waiting at the end.",
+      "Getting online shouldn't be a project. Claim getfreetree.com/yourname, pick one of twelve themes, drop in your links, and paste the URL into your bios — the whole thing takes about a minute. There's no page builder to wrestle, no design software to learn, and no watermark or \"upgrade to remove branding\" waiting at the end.",
       "Moving fast now doesn't box you in later. Layer on a custom font and accent color so the page reads like you and not a template, and connect your own domain for free the day you want to look more official — same page, same links, nothing to rebuild.",
     ],
   },

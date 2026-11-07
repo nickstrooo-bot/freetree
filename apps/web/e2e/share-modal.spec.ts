@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { signInFresh } from "./helpers";
 
 // M2 regression: the ShareKyteModal offers the profile URL across the SHARE_DOMAINS
-// (freetree.link / freetree.bio / freetree.page) and share-intent links. The agent kyte's
+// (getfreetree.com / freetree.bio / freetree.page) and share-intent links. The agent kyte's
 // username is "agent".
 test.describe("ShareKyteModal", () => {
   test("renders and emits correct per-domain URLs and share targets", async ({ page }) => {
@@ -13,7 +13,7 @@ test.describe("ShareKyteModal", () => {
 
     const url = page.getByTestId("share-url");
     await expect(url).toBeVisible();
-    await expect(url).toHaveValue("https://freetree.link/agent");
+    await expect(url).toHaveValue("https://getfreetree.com/agent");
 
     await page.getByRole("button", { name: "freetree.bio", exact: true }).click();
     await expect(url).toHaveValue("https://freetree.bio/agent");

@@ -1,7 +1,7 @@
 // Exported as its own subpath for the edge middleware; everything here must
 // stay free of zod imports, directly or transitively.
 
-export const KYTELINK_APEX_HOST = "freetree.link";
+export const KYTELINK_APEX_HOST = "getfreetree.com";
 
 // Founder-owned short domains that serve any non-root path as a username alias.
 export const VANITY_PROFILE_HOSTS = ["freetree.bio", "freetree.page", "yoyo.so", "downsad.com"] as const;

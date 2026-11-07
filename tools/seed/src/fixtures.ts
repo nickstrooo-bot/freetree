@@ -45,8 +45,8 @@ export type SeedKyte = {
 
 const POLY_LINKS = [
   { title: "GitHub", link: "https://github.com/aleemrehmtulla", emoji: "FaGithub", color: "transparent" },
-  { title: "Headshot", link: "https://freetree.link", emoji: "https://cdn.freetree.link/static/brand/aleem.png" },
-  { title: "Say hi", link: "https://freetree.link/aleem", emoji: "👋" },
+  { title: "Headshot", link: "https://getfreetree.com", emoji: "https://cdn.getfreetree.com/static/brand/aleem.png" },
+  { title: "Say hi", link: "https://getfreetree.com/aleem", emoji: "👋" },
 ];
 
 const CONTACT_ICONS = [
@@ -152,7 +152,7 @@ const LONG_CONTENT: Partial<ProfileContent> = {
   links: Array.from({ length: 10 }, (_, i) => ({
     title: `Link ${i + 1} ${"x".repeat(80)}`.slice(0, 100),
     link: `https://example.com/very/long/path/${i}/${"a".repeat(40)}`,
-    emoji: i % 3 === 0 ? "FaTwitter" : i % 3 === 1 ? "https://cdn.freetree.link/static/logos/icon.png" : "🔗",
+    emoji: i % 3 === 0 ? "FaTwitter" : i % 3 === 1 ? "https://cdn.getfreetree.com/static/logos/icon.png" : "🔗",
     color: "transparent",
   })),
 };

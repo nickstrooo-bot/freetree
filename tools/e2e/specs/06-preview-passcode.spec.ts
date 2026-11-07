@@ -33,7 +33,7 @@ test.describe("preview link", () => {
     const first = await openPanel(page);
     expect(first.passcode, "passcode shown up front").toMatch(/^\d{6}$/);
     expect(first.token, "token extracted").toBeTruthy();
-    // Regression: exactly one origin, no concatenated base URLs (freetree.link + web).
+    // Regression: exactly one origin, no concatenated base URLs (getfreetree.com + web).
     expect(first.url, "single well-formed preview URL").toMatch(
       /^https?:\/\/[^/]+\/p\/[A-Za-z0-9_-]{12}$/,
     );

@@ -46,7 +46,7 @@ export function Hero() {
           </a>
         </div>
         <div className="mt-5 text-[13px] text-faint">
-          freetree.link/<span className="text-ink">yourname</span> — claimed in 30 seconds
+          getfreetree.com/<span className="text-ink">yourname</span> — claimed in 30 seconds
         </div>
       </div>
 

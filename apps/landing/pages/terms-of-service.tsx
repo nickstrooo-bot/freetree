@@ -14,7 +14,7 @@ export function TermsOfServicePage() {
         {...buildPageSeo({
           path: "/terms-of-service",
           title: "Terms of service",
-          description: "The terms for using FreeTree's hosted service at freetree.link.",
+          description: "The terms for using FreeTree's hosted service at getfreetree.com.",
         })}
       />
       <LegalDocumentJsonLd

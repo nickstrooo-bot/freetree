@@ -14,8 +14,8 @@ const EXTRA_PRIMARY_HOSTS = (process.env.EXTRA_PRIMARY_HOSTS ?? "")
   .filter(Boolean);
 
 export const PRIMARY_HOSTS = new Set([
-  "freetree.link",
-  "www.freetree.link",
+  "getfreetree.com",
+  "www.getfreetree.com",
   "localhost:3000",
   "localhost:4000",
   "127.0.0.1:3000",
@@ -23,7 +23,7 @@ export const PRIMARY_HOSTS = new Set([
 ]);
 
 // Founder-owned short domains. Legacy parity (rewrite/01-parity.md §5): the root
-// path redirects to the freetree.link apex; any other path is a username alias and
+// path redirects to the getfreetree.com apex; any other path is a username alias and
 // serves that profile. All four stay functional in middleware; only freetree.bio and
 // freetree.page are communicated in product UI (ShareKyteModal).
 const VANITY_DOMAINS = new Set<string>(VANITY_PROFILE_HOSTS);

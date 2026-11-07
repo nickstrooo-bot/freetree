@@ -124,7 +124,7 @@ export function PricingPage() {
                     target="_blank"
                     className="text-accent hover:text-accent-hover cursor-pointer transition-colors outline-none"
                   >
-                    freetree.link
+                    getfreetree.com
                   </a>
                   <a
                     href={FOUNDER_TWITTER_URL}

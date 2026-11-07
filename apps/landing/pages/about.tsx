@@ -60,7 +60,7 @@ export function AboutPage() {
                       rel="noreferrer"
                       className="text-accent hover:text-accent-hover cursor-pointer transition-colors outline-none"
                     >
-                      freetree.link
+                      getfreetree.com
                     </a>
                     <a
                       href={FOUNDER_TWITTER_URL}

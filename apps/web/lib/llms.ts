@@ -21,7 +21,7 @@ const SUMMARY =
 const CONTEXT = [
   "Every feature is free forever — custom domains, themes, analytics, and organizations included. There is no paid tier, no trial, and nothing held back behind an upgrade.",
   "The whole stack is MIT-licensed and self-hostable, so an instance can run on your own infrastructure with the same feature set as the hosted one.",
-  "Profile pages at freetree.link/<username> are user-generated content rather than documentation, and robots.txt keeps them out of AI training and AI search corpora.",
+  "Profile pages at getfreetree.com/<username> are user-generated content rather than documentation, and robots.txt keeps them out of AI training and AI search corpora.",
   "Every page listed below also serves a markdown version: request it with an `Accept: text/markdown` header on the page's own URL.",
 ];
 

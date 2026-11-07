@@ -5,7 +5,7 @@ const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
 
 /**
- * Admins paste whatever they have: `@name`, `name`, `freetree.link/name`, or a
+ * Admins paste whatever they have: `@name`, `name`, `getfreetree.com/name`, or a
  * full profile URL with a trailing slash or query. All four resolve to the same
  * target, so all four are accepted here rather than rejected as typos.
  */

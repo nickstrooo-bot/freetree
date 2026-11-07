@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
-import { getCdnUrl } from "@kytelink/cdn";
 import { Container } from "../ui/container";
 import { Eyebrow } from "../ui/section";
-import { DEMO_ORG, DEMO_ORG_KYTES, DEMO_ORG_MEMBERS } from "../../consts/org-demo";
 
 const CHART_POINTS = [
   34, 33, 35, 32, 36, 38, 37, 40, 42, 41, 44, 47, 46, 50, 53, 52, 56, 60, 63, 62, 67, 72, 76, 74,
@@ -31,25 +29,15 @@ function AnalyticsChart() {
   );
 }
 
+// Illustrative trend line only — no real or sample numbers. The live
+// stats (page views, clicks, click rate) appear here once a page has traffic.
 function AnalyticsCard() {
-  const stats = [
-    { label: "Page views", value: "488" },
-    { label: "Clicks", value: "183" },
-    { label: "Rate", value: "37%" },
-  ];
   return (
     <div className="rounded-panel border border-cardline bg-card p-5 shadow-card-rest sm:p-7">
-      <div className="grid grid-cols-3 gap-3">
-        {stats.map((stat) => (
-          <div key={stat.label} className="rounded-card border border-hairline bg-canvas px-4 py-4">
-            <div className="text-xs text-tertiary">{stat.label}</div>
-            <div className="mt-1.5 text-[24px] font-bold tracking-[-0.02em] text-ink sm:text-[28px]">
-              {stat.value}
-            </div>
-          </div>
-        ))}
-      </div>
       <AnalyticsChart />
+      <p className="mt-4 text-center text-sm text-tertiary">
+        Page views, link clicks, and click rate — shown live once your page has traffic.
+      </p>
     </div>
   );
 }
@@ -74,68 +62,6 @@ function SpeedCard() {
           <div key={score.label} className="text-center">
             <div className="text-[22px] font-bold tracking-[-0.02em] text-accent">{score.value}</div>
             <div className="mt-1 text-xs text-tertiary">{score.label}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function OrgLogo({ src, alt, className }: { src: string; alt: string; className: string }) {
-  return (
-    <img
-      src={getCdnUrl(src)}
-      alt={alt}
-      loading="lazy"
-      decoding="async"
-      className={`${className} flex-shrink-0 rounded-pill border border-hairline bg-white object-cover`}
-    />
-  );
-}
-
-function OrganizationsCard() {
-  return (
-    <div className="rounded-panel border border-cardline bg-card p-5 shadow-card-rest sm:p-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <OrgLogo src={DEMO_ORG.logo} alt={DEMO_ORG.name} className="h-10 w-10" />
-          <div>
-            <div className="text-[15px] font-semibold text-ink">{DEMO_ORG.name}</div>
-            <div className="text-xs text-tertiary">{DEMO_ORG.members} members</div>
-          </div>
-        </div>
-        <div className="flex items-center">
-          {DEMO_ORG_MEMBERS.map((member) => (
-            <img
-              key={member.name}
-              src={getCdnUrl(member.photo)}
-              alt={member.name}
-              loading="lazy"
-              decoding="async"
-              className="-ml-2 h-7 w-7 rounded-pill border-2 border-card object-cover first:ml-0"
-            />
-          ))}
-          <span className="-ml-2 flex h-7 min-w-7 items-center justify-center rounded-pill border-2 border-card bg-accent-soft px-1 text-[10px] font-semibold text-accent">
-            +{DEMO_ORG.members - DEMO_ORG_MEMBERS.length}
-          </span>
-        </div>
-      </div>
-      <div className="mt-5 flex flex-col gap-3">
-        {DEMO_ORG_KYTES.map((kyte) => (
-          <div
-            key={kyte.name}
-            className="flex items-center justify-between gap-3 rounded-card border border-hairline bg-card px-4 py-3.5"
-          >
-            <div className="flex min-w-0 items-center gap-3">
-              <OrgLogo src={kyte.logo} alt={kyte.name} className="h-8 w-8" />
-              <div className="min-w-0">
-                <div className="truncate text-sm font-semibold text-ink">{kyte.name}</div>
-                <div className="truncate text-xs text-faint">freetree.link/{kyte.handle}</div>
-              </div>
-            </div>
-            <span className="flex-shrink-0 rounded-pill bg-success/10 px-3 py-1 text-xs font-medium text-success">
-              Live
-            </span>
           </div>
         ))}
       </div>
@@ -205,17 +131,6 @@ export function DeepFeatures() {
         title="Faster than your bio deserves."
         body="Every page is statically rendered and cached at the edge, close to your visitors. No render-blocking scripts, no megabytes of tracker JavaScript — just your links, instantly."
         card={<SpeedCard />}
-      />
-      <FeatureRow
-        eyebrow="Organizations"
-        title="One home for every FreeTree."
-        body="Create an organization for your team, band, or club. Invite people with a role, keep as many FreeTrees as you need under one roof, and switch between them in a click."
-        bullets={[
-          "Unlimited FreeTrees per organization",
-          "Invite teammates as owners or editors",
-          "Shared analytics and storage",
-        ]}
-        card={<OrganizationsCard />}
       />
     </Container>
   );

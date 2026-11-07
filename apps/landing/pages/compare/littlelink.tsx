@@ -15,7 +15,7 @@ const sections = [
     heading: "FreeTree is the product version of the same values",
     paragraphs: [
       "FreeTree keeps the parts that make LittleLink great — open source, MIT, self-hostable, genuinely free — and adds the product layer: a web editor with live preview, per-link analytics, scheduled publishing, 12 themes, and organizations with roles.",
-      "It also removes the deploy step entirely if you want it to: the hosted version at freetree.link is free with every feature, so your page is live in a minute and editable from any browser — no git push to change a link.",
+      "It also removes the deploy step entirely if you want it to: the hosted version at getfreetree.com is free with every feature, so your page is live in a minute and editable from any browser — no git push to change a link.",
     ],
   },
   {

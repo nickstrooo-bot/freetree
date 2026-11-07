@@ -79,7 +79,7 @@ const HUMAN_GATE: FlowStep[] = [
     step: "6",
     label: "Appeal",
     title: "You can always reach a human",
-    body: "The suspended page, the editor banner, and the email all carry the same appeal path: the form at freetree.link/appeal. No account needed. If we got it wrong, the page is restored with its content intact.",
+    body: "The suspended page, the editor banner, and the email all carry the same appeal path: the form at getfreetree.com/appeal. No account needed. If we got it wrong, the page is restored with its content intact.",
     tone: "human",
   },
 ];

@@ -6,7 +6,7 @@
 // concerns handled after publish, not claim-time validation.
 
 // Anything that is or could become a hostname in front of the product. Claiming
-// these makes freetree.link/<name> read as infrastructure it is not.
+// these makes getfreetree.com/<name> read as infrastructure it is not.
 const INFRASTRUCTURE = [
   "www",
   "cdn",

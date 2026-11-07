@@ -32,7 +32,7 @@ const sections = [
     heading: "Two DNS records and you're live",
     paragraphs: [
       "Point an A record at FreeTree and add a CNAME for www — both values are shown copy-paste ready in your settings. Once DNS propagates, HTTPS is provisioned automatically; there's nothing to renew and no certificate to babysit.",
-      "Your freetree.link/yourname URL keeps working too, so nothing you've already posted ever breaks.",
+      "Your getfreetree.com/yourname URL keeps working too, so nothing you've already posted ever breaks.",
     ],
   },
   {
@@ -64,7 +64,7 @@ const faqs = [
     answer: "Yes. Point a CNAME from any subdomain you like and it works the same way.",
   },
   {
-    question: "What happens to my freetree.link URL?",
+    question: "What happens to my getfreetree.com URL?",
     answer:
       "It keeps working alongside your domain, so old bios and posted links never break.",
   },

@@ -122,7 +122,7 @@ const agentPublished = content({
   description: "Building FreeTree in public. Follow along.",
   theme: "midnight",
   links: [
-    { title: "My newsletter", link: "https://freetree.link/blog", emoji: "📮" },
+    { title: "My newsletter", link: "https://getfreetree.com/blog", emoji: "📮" },
     { title: "Star on GitHub", link: "https://github.com/kytelink", emoji: "FaGithub" },
   ],
   icons: [
@@ -137,9 +137,9 @@ const agentDraft = content({
   description: "Building FreeTree in public. Follow along.",
   theme: "midnight",
   links: [
-    { title: "My newsletter", link: "https://freetree.link/blog", emoji: "📮" },
+    { title: "My newsletter", link: "https://getfreetree.com/blog", emoji: "📮" },
     { title: "Star on GitHub", link: "https://github.com/kytelink", emoji: "FaGithub" },
-    { title: "New: launch notes", link: "https://freetree.link/launch", emoji: "🚀" },
+    { title: "New: launch notes", link: "https://getfreetree.com/launch", emoji: "🚀" },
   ],
   icons: [
     { name: "Twitter", url: "https://twitter.com/agent" },

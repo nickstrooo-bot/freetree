@@ -172,7 +172,7 @@ export const emailCaptureRouter = router({
     const webBase = (
       process.env.PUBLIC_WEB_URL ??
       process.env.NEXT_PUBLIC_WEB_URL ??
-      "https://freetree.link"
+      "https://getfreetree.com"
     ).replace(/\/$/, "");
     const lines = ["email,subscribed_at,unsubscribe_url"];
     for (const s of subs) {

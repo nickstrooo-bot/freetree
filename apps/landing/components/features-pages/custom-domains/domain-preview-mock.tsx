@@ -8,7 +8,7 @@ export function DomainPreviewMock() {
     <div className="grid gap-8 sm:grid-cols-2">
       <figure className="m-0 flex flex-col items-center gap-4">
         <figcaption className="max-w-full truncate rounded-pill bg-tint px-3 py-1.5 font-mono text-xs text-secondary">
-          freetree.link/linky
+          getfreetree.com/linky
         </figcaption>
         <PhonePreview content={content} themeOverride="default" />
       </figure>

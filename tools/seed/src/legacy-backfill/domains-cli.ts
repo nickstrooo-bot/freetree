@@ -61,7 +61,7 @@ function buildProtectedSet(env: NodeJS.ProcessEnv): Set<string> {
 function isPlatformHost(host: string, protectedHosts: ReadonlySet<string>): boolean {
   const lowered = host.toLowerCase();
   if (protectedHosts.has(lowered)) return true;
-  if (lowered === "freetree.link" || lowered.endsWith(".freetree.link")) return true;
+  if (lowered === "getfreetree.com" || lowered.endsWith(".getfreetree.com")) return true;
   if (lowered.endsWith(".vercel.app")) return true;
   return false;
 }

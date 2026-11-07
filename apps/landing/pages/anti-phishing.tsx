@@ -14,7 +14,7 @@ const FAQS: FaqEntry[] = [
   {
     question: "Is FreeTree safe to click?",
     answer:
-      "Every page published on freetree.link is reviewed on every publish — not only the first one. A short set of deterministic phishing checks runs first and flags what it finds, then an AI review of the profile text, every link, the redirect target, and the avatar decides the verdict; nothing is suspended by a pattern match alone. Any suspension is then reviewed by a person. Treat a link the way you would any link on the open web: FreeTree never asks for your password, banking details, or account-recovery codes, and a FreeTree page that does is phishing — report it.",
+      "Every page published on getfreetree.com is reviewed on every publish — not only the first one. A short set of deterministic phishing checks runs first and flags what it finds, then an AI review of the profile text, every link, the redirect target, and the avatar decides the verdict; nothing is suspended by a pattern match alone. Any suspension is then reviewed by a person. Treat a link the way you would any link on the open web: FreeTree never asks for your password, banking details, or account-recovery codes, and a FreeTree page that does is phishing — report it.",
   },
   {
     question: "Did FreeTree have a phishing problem?",
@@ -44,17 +44,17 @@ const FAQS: FaqEntry[] = [
   {
     question: "How do I appeal a suspended FreeTree page?",
     answer:
-      "Use the form at freetree.link/appeal — no account needed, and it covers a suspended page, organization, or account. It is the same appeal path shown on the suspended page, in the editor banner, and in the suspension email, a person reads every one, and we answer fast. If the suspension was wrong, the page is restored with its content, links, and analytics intact.",
+      "Use the form at getfreetree.com/appeal — no account needed, and it covers a suspended page, organization, or account. It is the same appeal path shown on the suspended page, in the editor banner, and in the suspension email, a person reads every one, and we answer fast. If the suspension was wrong, the page is restored with its content, links, and analytics intact.",
   },
   {
     question: "How do I report a phishing or scam FreeTree page?",
     answer:
-      "Report it at freetree.link/report — no account needed. Reports never automatically suspend a page; they open a case in the same human review queue where a reviewer decides. The form gives the same neutral response no matter what you submit and will not confirm whether a username exists.",
+      "Report it at getfreetree.com/report — no account needed. Reports never automatically suspend a page; they open a case in the same human review queue where a reviewer decides. The form gives the same neutral response no matter what you submit and will not confirm whether a username exists.",
   },
   {
     question: "Does this apply to self-hosted FreeTree instances?",
     answer:
-      "No. This statement covers the hosted service at freetree.link only. FreeTree is MIT-licensed open source, and self-hosted copies ship with the review provider off by default and are operated entirely by whoever runs them.",
+      "No. This statement covers the hosted service at getfreetree.com only. FreeTree is MIT-licensed open source, and self-hosted copies ship with the review provider off by default and are operated entirely by whoever runs them.",
   },
 ];
 

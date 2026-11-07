@@ -4,7 +4,7 @@ const AGENT_WEB = "http://localhost:4000";
 const DEV_WEB = "http://localhost:3000";
 const AGENT_LANDING = "http://localhost:4001";
 const DEV_LANDING = "http://localhost:3001";
-const PROD_LANDING = "https://freetree.link";
+const PROD_LANDING = "https://getfreetree.com";
 
 export function isAgentMode(): boolean {
   return process.env.AGENT_MODE === "true";

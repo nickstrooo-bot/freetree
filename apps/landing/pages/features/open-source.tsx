@@ -19,7 +19,7 @@ const bullets = [
   },
   {
     title: "Real code, not a demo",
-    description: "The exact code behind freetree.link — no gated \"enterprise\" fork.",
+    description: "The exact code behind getfreetree.com — no gated \"enterprise\" fork.",
   },
 ];
 
@@ -27,7 +27,7 @@ const sections = [
   {
     heading: "Open source, without the asterisk",
     paragraphs: [
-      "FreeTree's entire codebase is public on GitHub — the same code that runs freetree.link, not a stripped-down community edition with the good parts held back. Read it, fork it, fix it, or run it yourself.",
+      "FreeTree's entire codebase is public on GitHub — the same code that runs getfreetree.com, not a stripped-down community edition with the good parts held back. Read it, fork it, fix it, or run it yourself.",
       "Free and open source isn't a growth tactic here; it's the point. Your page, your data, and the software it runs on all stay in your reach.",
     ],
   },
@@ -65,7 +65,7 @@ const faqs = [
   {
     question: "Is the hosted version the same code?",
     answer:
-      "Yes. freetree.link runs the exact code in the public repository — there is no gated enterprise fork.",
+      "Yes. getfreetree.com runs the exact code in the public repository — there is no gated enterprise fork.",
   },
   {
     question: "Can I export my data and leave?",

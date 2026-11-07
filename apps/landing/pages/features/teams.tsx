@@ -1,6 +1,5 @@
 import { FeaturePageLayout } from "../../components/features-pages/feature-page-layout";
 import { RolesSheetMock } from "../../components/features-pages/teams/roles-sheet-mock";
-import { OrgPagesMock } from "../../components/features-pages/teams/org-pages-mock";
 import { getFeature } from "../../consts/features";
 
 const feature = getFeature("teams");
@@ -87,7 +86,6 @@ export function TeamsFeaturePage() {
       mockups={
         <>
           <RolesSheetMock />
-          <OrgPagesMock />
         </>
       }
     />

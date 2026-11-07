@@ -28,7 +28,7 @@ export function NotFound() {
             claimable ? (
               <>
                 If no one has claimed{" "}
-                <span className="text-ink font-medium">freetree.link/{attempted}</span>{" "}
+                <span className="text-ink font-medium">getfreetree.com/{attempted}</span>{" "}
                 yet, it can be yours.
               </>
             ) : (

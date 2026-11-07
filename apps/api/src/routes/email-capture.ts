@@ -47,7 +47,7 @@ function publicBaseUrl(): string {
   return (
     process.env.PUBLIC_WEB_URL ??
     process.env.NEXT_PUBLIC_WEB_URL ??
-    "https://freetree.link"
+    "https://getfreetree.com"
   );
 }
 

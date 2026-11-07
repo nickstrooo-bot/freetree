@@ -29,7 +29,7 @@ const sections = [
     heading: "How to switch from Linktree",
     paragraphs: [
       "There's no import wizard because none is needed: open your Linktree in one tab, your FreeTree editor in the other, and re-add your links — most bio pages carry a dozen or two, so this is a ten-minute job. Pick a theme, set your accent color, and flip the watermark toggle if you want it gone.",
-      "Then point your own domain at the page (a few DNS records, free) or use freetree.link/yourname, and update the link in your Instagram, TikTok, and YouTube bios. Your Linktree keeps working while you switch, so there's no downtime at any point in the move.",
+      "Then point your own domain at the page (a few DNS records, free) or use getfreetree.com/yourname, and update the link in your Instagram, TikTok, and YouTube bios. Your Linktree keeps working while you switch, so there's no downtime at any point in the move.",
     ],
   },
 ];

@@ -32,7 +32,7 @@ export function SelectUsernameStep({ username, onChange, onNext }: SelectUsernam
         )}
       >
         <span className="flex shrink-0 items-center whitespace-nowrap border-r border-border bg-tint pl-4 pr-3 text-secondary">
-          freetree.link/
+          getfreetree.com/
         </span>
         <input
           autoFocus
@@ -60,7 +60,7 @@ export function SelectUsernameStep({ username, onChange, onNext }: SelectUsernam
         >
           {availability.reason ?? (
             <>
-              Your page will live at freetree.link/
+              Your page will live at getfreetree.com/
               <span className="text-ink">{username.trim() || "yourname"}</span>
             </>
           )}
