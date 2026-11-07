@@ -7,6 +7,7 @@ import {
   scheduledBlockSchema,
   tipJarSchema,
 } from "@kytelink/schemas";
+import { Prisma } from "@kytelink/db";
 
 interface ContentColumns {
   displayName: string | null;
@@ -82,8 +83,8 @@ export function contentToColumns(content: ProfileContent): {
   icons: ProfileContent["icons"];
   bookingBlocks: ProfileContent["bookingBlocks"];
   scheduledBlocks: ProfileContent["scheduledBlocks"];
-  liveBadge: ProfileContent["liveBadge"];
-  tipJar: ProfileContent["tipJar"];
+  liveBadge: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
+  tipJar: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
 } {
   return {
     displayName: content.displayName,
@@ -101,7 +102,7 @@ export function contentToColumns(content: ProfileContent): {
     icons: content.icons,
     bookingBlocks: content.bookingBlocks,
     scheduledBlocks: content.scheduledBlocks,
-    liveBadge: content.liveBadge,
-    tipJar: content.tipJar,
+    liveBadge: content.liveBadge ?? Prisma.JsonNull,
+    tipJar: content.tipJar ?? Prisma.JsonNull,
   };
 }
