@@ -13,6 +13,7 @@ import { domainsRouter } from "./routers/domains";
 import { adminRouter } from "./routers/admin";
 import { commerceRouter } from "./routers/commerce";
 import { emailCaptureRouter } from "./routers/email-capture";
+import { tipJarRouter } from "./routers/tip-jar";
 
 export const appRouter = router({
   org: orgRouter,
@@ -29,6 +30,7 @@ export const appRouter = router({
   admin: adminRouter,
   commerce: commerceRouter,
   emailCapture: emailCaptureRouter,
+  tipJar: tipJarRouter,
 });
 
 export type AppRouter = typeof appRouter;

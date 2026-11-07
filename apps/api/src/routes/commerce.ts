@@ -3,6 +3,7 @@ import { join, basename } from "node:path";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { getDb } from "@kytelink/db";
+import { tipJarSchema } from "@kytelink/schemas";
 import type { RateLimitClass } from "@kytelink/schemas";
 import { getRedis } from "../redis";
 import {
@@ -55,6 +56,46 @@ const checkoutBody = z.object({
   buyerEmail: z.string().trim().email().max(320).optional(),
 });
 
+const tipCheckoutBody = z.object({
+  username: z.string().trim().min(1).max(63),
+  amountCents: z.number().int().min(50).max(1_000_000),
+  buyerEmail: z.string().trim().email().max(320).optional(),
+  tipMessage: z.string().trim().max(500).optional(),
+});
+
+/**
+ * The tip jar's hidden backing Product (kind "tip", one per kyte). It exists
+ * only so tip Purchases have a productId to point at — it is never listed in
+ * the store (active=false) and never sold directly. The real amount lives on
+ * each Purchase row, not on this row's priceCents.
+ */
+async function getOrCreateTipProduct(db: any, kyte: { id: string; orgId: string }, heading: string) {
+  const existing = await db.product.findFirst({
+    where: { kyteId: kyte.id, kind: "tip" },
+  });
+  if (existing) return existing;
+  return db.product.create({
+    data: {
+      kyteId: kyte.id,
+      orgId: kyte.orgId,
+      name: heading,
+      description: null,
+      priceCents: 0,
+      currency: "usd",
+      kind: "tip",
+      active: false,
+    },
+  });
+}
+
+/** Read the PUBLISHED tip jar for a kyte (draft jars don't take tips). */
+function publishedTipJar(published: { tipJar?: unknown } | null) {
+  if (!published) return null;
+  const parsed = tipJarSchema.safeParse(published.tipJar);
+  if (!parsed.success || !parsed.data.active) return null;
+  return parsed.data;
+}
+
 export function registerCommerceRoutes(app: FastifyInstance): void {
   // ── Public product listing for a profile page ────────────────────────────
   app.get("/commerce/products/:username", async (req, reply) => {
@@ -96,6 +137,129 @@ export function registerCommerceRoutes(app: FastifyInstance): void {
       feePercent: getFeePercent(),
       checkoutEnabled: commerceEnabled,
     });
+  });
+
+  // ── Public tip jar config for a profile page ─────────────────────────────
+  // Best-effort like products: a missing/inactive jar is just null.
+  app.get("/commerce/tip-jar/:username", async (req, reply) => {
+    if (!(await rateLimitOr429(app, req, reply, "commerce-products"))) return;
+    const { username } = req.params as { username: string };
+    const db = getDb();
+    const kyte = await db.kyte.findFirst({
+      where: { username: username.toLowerCase() },
+      select: { id: true },
+    });
+    if (!kyte) {
+      await reply.status(404).send({ error: "NOT_FOUND" });
+      return;
+    }
+    const published = await db.publishedKyte.findUnique({
+      where: { kyteId: kyte.id },
+      select: { tipJar: true },
+    });
+    const jar = publishedTipJar(published);
+    await reply.send({
+      tipJar: jar
+        ? { heading: jar.heading, message: jar.message ?? null, amountsCents: jar.amountsCents }
+        : null,
+      feePercent: getFeePercent(),
+      checkoutEnabled: isStripeConfigured(),
+    });
+  });
+
+  // ── Create a Stripe Checkout session for a tip ───────────────────────────
+  // A tip is a Purchase against the kyte's hidden tip Product, at one of the
+  // jar's preset amounts. Same fee math as a product sale: computeFeeCents
+  // (4% of what's left after Stripe's fee) at the Purchase row AND inside
+  // createCheckoutSession, so the charge and the seller preview agree.
+  app.post("/commerce/tip", async (req, reply) => {
+    if (!(await rateLimitOr429(app, req, reply, "commerce-checkout"))) return;
+    const stripe = getStripeClient();
+    if (!stripe) {
+      await reply.status(503).send({ error: "COMMERCE_NOT_CONFIGURED" });
+      return;
+    }
+    const parsed = tipCheckoutBody.safeParse(req.body);
+    if (!parsed.success) {
+      await reply.status(400).send({ error: "BAD_REQUEST" });
+      return;
+    }
+
+    const db = getDb();
+    const kyte = await db.kyte.findFirst({
+      where: { username: parsed.data.username.toLowerCase() },
+      select: { id: true, orgId: true, username: true, displayName: true },
+    });
+    if (!kyte) {
+      await reply.status(404).send({ error: "NOT_FOUND" });
+      return;
+    }
+
+    const published = await db.publishedKyte.findUnique({
+      where: { kyteId: kyte.id },
+      select: { tipJar: true },
+    });
+    const jar = publishedTipJar(published);
+    if (!jar) {
+      await reply.status(404).send({ error: "TIP_JAR_NOT_FOUND" });
+      return;
+    }
+    if (!jar.amountsCents.includes(parsed.data.amountCents)) {
+      await reply.status(400).send({ error: "INVALID_TIP_AMOUNT" });
+      return;
+    }
+
+    const connectAccount = await db.stripeConnectAccount.findUnique({
+      where: { orgId: kyte.orgId },
+    });
+    if (!connectAccount?.chargesEnabled) {
+      await reply.status(409).send({ error: "SELLER_NOT_READY" });
+      return;
+    }
+
+    const config = getConfig();
+    const username = kyte.username ?? kyte.id;
+    const tipProduct = await getOrCreateTipProduct(db, kyte, jar.heading);
+
+    const purchase = await db.purchase.create({
+      data: {
+        productId: tipProduct.id,
+        kyteId: kyte.id,
+        buyerEmail: parsed.data.buyerEmail ?? null,
+        stripeSessionId: `pending_tip_${kyte.id}_${Date.now()}`,
+        amountCents: parsed.data.amountCents,
+        feeCents: computeFeeCents(parsed.data.amountCents),
+        currency: "usd",
+        status: "pending",
+        tipMessage: parsed.data.tipMessage ?? null,
+      },
+    });
+
+    try {
+      const session = await createCheckoutSession(stripe, {
+        stripeAccountId: connectAccount.stripeAccountId,
+        productName: jar.heading,
+        productDescription: jar.message ?? `A tip for ${kyte.displayName ?? username}`,
+        amountCents: parsed.data.amountCents,
+        currency: "usd",
+        buyerEmail: parsed.data.buyerEmail,
+        successUrl: `${config.webBaseUrl}/${username}/thanks?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${config.webBaseUrl}/${username}`,
+        purchaseId: purchase.id,
+        allowPromoCodes: false,
+      });
+
+      await db.purchase.update({
+        where: { id: purchase.id },
+        data: { stripeSessionId: session.sessionId },
+      });
+
+      await reply.send({ url: session.url, sessionId: session.sessionId });
+    } catch (error) {
+      log.error({ err: error, kyteId: kyte.id }, "tip checkout session creation failed");
+      await db.purchase.delete({ where: { id: purchase.id } }).catch(() => undefined);
+      await reply.status(502).send({ error: "CHECKOUT_FAILED" });
+    }
   });
 
   // ── Create a Stripe Checkout session for a product ───────────────────────
@@ -187,7 +351,8 @@ export function registerCommerceRoutes(app: FastifyInstance): void {
         status: true,
         downloadToken: true,
         downloadExpiresAt: true,
-        product: { select: { name: true } },
+        tipMessage: true,
+        product: { select: { name: true, kind: true, fileKey: true, externalUrl: true } },
       },
     });
     if (!purchase) {
@@ -195,11 +360,16 @@ export function registerCommerceRoutes(app: FastifyInstance): void {
       return;
     }
     const config = getConfig();
+    const isTip = purchase.product.kind === "tip";
+    // A tip has no file to download — the thanks page must not offer one.
+    const hasDownload = Boolean(purchase.product.fileKey || purchase.product.externalUrl);
     await reply.send({
       status: purchase.status,
       productName: purchase.product.name,
+      isTip,
+      tipMessage: purchase.tipMessage,
       downloadUrl:
-        purchase.status === "completed"
+        purchase.status === "completed" && hasDownload
           ? `${config.apiBaseUrl}/commerce/download/${purchase.downloadToken}`
           : null,
       expiresAt: purchase.downloadExpiresAt?.toISOString() ?? null,

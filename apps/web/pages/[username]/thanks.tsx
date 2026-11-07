@@ -5,6 +5,8 @@ import { PageHead } from "../../components/seo/page-head";
 interface OrderState {
   status: string;
   productName: string;
+  /** True for a tip (no file, no download) as opposed to a product purchase. */
+  isTip?: boolean;
   downloadUrl: string | null;
   expiresAt: string | null;
 }
@@ -81,6 +83,11 @@ export function ThanksPage() {
           <p>Confirming your payment…</p>
         ) : order.status === "pending" ? (
           <p>Payment processing — your download will appear here in a moment…</p>
+        ) : order.status === "completed" && order.isTip ? (
+          <p style={{ margin: "0 0 16px" }}>
+            Your tip for <strong>{order.productName}</strong> went through. Thank you for
+            supporting this creator!
+          </p>
         ) : order.status === "completed" && order.downloadUrl ? (
           <>
             <p style={{ margin: "0 0 16px" }}>

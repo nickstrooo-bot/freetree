@@ -49,6 +49,7 @@ export interface CommerceProduct {
   fileSizeBytes: number | null;
   hasFile: boolean;
   externalUrl: string | null;
+  kind: string;
   active: boolean;
   allowPromoCodes: boolean;
   sortOrder: number;
@@ -78,6 +79,28 @@ export interface CommerceSale {
 
 export interface CommerceSales {
   sales: CommerceSale[];
+  nextCursor: string | null;
+  totals: {
+    grossCents: number;
+    feesCents: number;
+    netCents: number;
+    count: number;
+  };
+}
+
+export interface Tip {
+  id: string;
+  buyerEmail: string | null;
+  amountCents: number;
+  feeCents: number;
+  tipMessage: string | null;
+  currency: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface TipList {
+  tips: Tip[];
   nextCursor: string | null;
   totals: {
     grossCents: number;
@@ -276,6 +299,13 @@ export interface ApiClient {
     }): Promise<{ subscribers: EmailSubscriber[]; nextCursor: string | null }>;
     deleteSubscriber(input: { kyteId: string; subscriberId: string }): Promise<{ ok: true }>;
     exportCsv(input: { kyteId: string }): Promise<{ csv: string; filename: string }>;
+  };
+  tipJar: {
+    listTips(input: {
+      kyteId: string;
+      limit?: number;
+      cursor?: string;
+    }): Promise<TipList>;
   };
   resolveKyteSummary(kyteId: string): Promise<KyteSummary | null>;
 }

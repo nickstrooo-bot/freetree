@@ -10,6 +10,7 @@ import { cn } from "@/lib/cn";
 import { EDITOR_TABS, TAB_LABELS, type EditorTab } from "./tabs";
 import { LinksTab } from "./tabs/links-tab";
 import { BookingsTab } from "./tabs/bookings-tab";
+import { ScheduledTab } from "./tabs/scheduled-tab";
 import { DesignTab } from "./tabs/design-tab";
 import { SettingsTab } from "./tabs/settings-tab";
 import { AnalyticsTab } from "./tabs/analytics-tab";
@@ -74,6 +75,7 @@ export function EditorShell({ tab, onSwitchKyte }: EditorShellProps) {
             <div className="pt-7">
               {activeTab === "links" ? <LinksTab /> : null}
               {activeTab === "bookings" ? <BookingsTab /> : null}
+              {activeTab === "scheduled" ? <ScheduledTab /> : null}
               {activeTab === "products" ? <ProductsTab /> : null}
               {activeTab === "emails" ? <EmailsTab /> : null}
               {activeTab === "design" ? <DesignTab /> : null}

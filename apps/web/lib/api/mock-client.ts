@@ -475,6 +475,7 @@ export function createMockClient(getCurrentUserId: () => string): ApiClient {
           fileSizeBytes: null,
           hasFile: Boolean(input.fileBase64),
           externalUrl: input.externalUrl ?? null,
+          kind: "digital",
           active: true,
           allowPromoCodes: input.allowPromoCodes ?? false,
           sortOrder: 0,
@@ -494,6 +495,7 @@ export function createMockClient(getCurrentUserId: () => string): ApiClient {
           fileSizeBytes: null,
           hasFile: false,
           externalUrl: input.externalUrl ?? null,
+          kind: "digital",
           active: input.active ?? true,
           allowPromoCodes: input.allowPromoCodes ?? false,
           sortOrder: 0,
@@ -555,6 +557,15 @@ export function createMockClient(getCurrentUserId: () => string): ApiClient {
       },
       async exportCsv() {
         return { csv: "email,subscribed_at,unsubscribe_url\n", filename: "subscribers.csv" };
+      },
+    },
+    tipJar: {
+      async listTips() {
+        return {
+          tips: [],
+          nextCursor: null,
+          totals: { grossCents: 0, feesCents: 0, netCents: 0, count: 0 },
+        };
       },
     },
 

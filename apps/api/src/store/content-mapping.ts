@@ -3,6 +3,9 @@ import {
   profileContentSchema,
   type ThemeKey,
   themeKeySchema,
+  liveBadgeSchema,
+  scheduledBlockSchema,
+  tipJarSchema,
 } from "@kytelink/schemas";
 
 interface ContentColumns {
@@ -20,6 +23,9 @@ interface ContentColumns {
   links: unknown;
   icons: unknown;
   bookingBlocks: unknown;
+  scheduledBlocks: unknown;
+  liveBadge: unknown;
+  tipJar: unknown;
 }
 
 function safeTheme(theme: string): ThemeKey {
@@ -28,6 +34,14 @@ function safeTheme(theme: string): ThemeKey {
 }
 
 export function columnsToContent(row: ContentColumns): ProfileContent {
+  // A malformed stored jar must never break the whole profile — fall back
+  // to no jar and let the seller re-save it from the editor.
+  const tipJarParsed = tipJarSchema.safeParse(row.tipJar);
+  // Same guard for scheduled blocks: a malformed stored block drops just the
+  // scheduled section, never the whole profile.
+  const scheduledParsed = scheduledBlockSchema.array().safeParse(row.scheduledBlocks);
+  // And for the live badge: malformed stored config means no badge.
+  const liveBadgeParsed = liveBadgeSchema.safeParse(row.liveBadge);
   const candidate = {
     displayName: row.displayName,
     description: row.description,
@@ -43,6 +57,9 @@ export function columnsToContent(row: ContentColumns): ProfileContent {
     links: Array.isArray(row.links) ? row.links : [],
     icons: Array.isArray(row.icons) ? row.icons : [],
     bookingBlocks: Array.isArray(row.bookingBlocks) ? row.bookingBlocks : [],
+    scheduledBlocks: scheduledParsed.success ? scheduledParsed.data : [],
+    liveBadge: liveBadgeParsed.success ? liveBadgeParsed.data : null,
+    tipJar: tipJarParsed.success ? tipJarParsed.data : null,
     avatar: null,
   };
   const parsed = profileContentSchema.safeParse(candidate);
@@ -64,6 +81,9 @@ export function contentToColumns(content: ProfileContent): {
   links: ProfileContent["links"];
   icons: ProfileContent["icons"];
   bookingBlocks: ProfileContent["bookingBlocks"];
+  scheduledBlocks: ProfileContent["scheduledBlocks"];
+  liveBadge: ProfileContent["liveBadge"];
+  tipJar: ProfileContent["tipJar"];
 } {
   return {
     displayName: content.displayName,
@@ -80,5 +100,8 @@ export function contentToColumns(content: ProfileContent): {
     links: content.links,
     icons: content.icons,
     bookingBlocks: content.bookingBlocks,
+    scheduledBlocks: content.scheduledBlocks,
+    liveBadge: content.liveBadge,
+    tipJar: content.tipJar,
   };
 }

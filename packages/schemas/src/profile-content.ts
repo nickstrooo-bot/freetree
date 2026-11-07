@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { linkSchema } from "./link";
 import { bookingBlockSchema, MAX_PROFILE_BOOKING_BLOCKS } from "./booking";
+import { liveBadgeSchema } from "./live-badge";
+import {
+  MAX_PROFILE_SCHEDULED_BLOCKS,
+  scheduledBlockSchema,
+} from "./scheduled-block";
+import { tipJarSchema } from "./tip-jar";
 import { iconSchema } from "./icon";
 import { themeKeySchema } from "./themes";
 import { fontKeySchema } from "./fonts";
@@ -52,6 +58,18 @@ export const profileContentSchema = z.object({
   icons: z.array(iconSchema).max(MAX_PROFILE_ICONS),
   // Booking buttons (Calendly/Cal.com URLs). Same JSON-array pattern as links.
   bookingBlocks: z.array(bookingBlockSchema).max(MAX_PROFILE_BOOKING_BLOCKS).default([]),
+  // Scheduled blocks: link buttons that go live at startsAt, optionally expire
+  // at endsAt, and count down until they open. Same JSON-array pattern.
+  scheduledBlocks: z
+    .array(scheduledBlockSchema)
+    .max(MAX_PROFILE_SCHEDULED_BLOCKS)
+    .default([]),
+  // Live badge: a "LIVE NOW" pill driven by the seller's YouTube channel.
+  // Null = no badge on this profile.
+  liveBadge: liveBadgeSchema.nullable().default(null),
+  // Tip jar ("leave a tip" block). null = no tip jar on this profile.
+  // Stored profiles predate the tip jar, so absent = null.
+  tipJar: tipJarSchema.nullable().default(null),
   avatar: avatarSchema,
 });
 
@@ -81,6 +99,9 @@ export const PROFILE_CONTENT_FIELD_TO_COLUMN = {
   links: "links",
   icons: "icons",
   bookingBlocks: "bookingBlocks",
+  scheduledBlocks: "scheduledBlocks",
+  liveBadge: "liveBadge",
+  tipJar: "tipJar",
   avatar: "avatarAssetId",
 } as const satisfies Record<keyof ProfileContent, string>;
 
@@ -107,6 +128,9 @@ export function emptyProfileContent(): ProfileContent {
     links: [],
     icons: [],
     bookingBlocks: [],
+    scheduledBlocks: [],
+    liveBadge: null,
+    tipJar: null,
     avatar: null,
   };
 }

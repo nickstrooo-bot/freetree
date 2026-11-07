@@ -5,7 +5,9 @@ import type {
   CommerceProduct as Product,
   CommerceSale as Sale,
   ConnectStatus,
+  Tip,
 } from "../../../../lib/api/client-interface";
+import { emptyTipJar } from "@kytelink/schemas";
 import { formatProductPrice } from "@kytelink/ui";
 import { Plus, Trash2, Pencil, ExternalLink } from "lucide-react";
 
@@ -23,7 +25,7 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 export function ProductsTab() {
-  const { kyte, allows } = useEditor();
+  const { kyte, allows, draft, patchDraft } = useEditor();
   const { api, toast } = useApp();
   const readOnly = !allows("edit_draft");
 
@@ -32,6 +34,23 @@ export function ProductsTab() {
   const [totals, setTotals] = useState({ grossCents: 0, feesCents: 0, netCents: 0, count: 0 });
   const [connect, setConnect] = useState<ConnectStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tips, setTips] = useState<Tip[]>([]);
+  const [tipTotals, setTipTotals] = useState({ grossCents: 0, feesCents: 0, netCents: 0, count: 0 });
+
+  // Tip jar form state (saved into the page draft on Save, like booking blocks).
+  const [tipHeading, setTipHeading] = useState("");
+  const [tipMessage, setTipMessage] = useState("");
+  const [tipAmounts, setTipAmounts] = useState("");
+  const [tipFormError, setTipFormError] = useState<string | null>(null);
+
+  // Keep the jar form in sync with the draft (e.g. after publish or revert).
+  useEffect(() => {
+    const jar = draft.tipJar;
+    setTipHeading(jar?.heading ?? "");
+    setTipMessage(jar?.message ?? "");
+    setTipAmounts(jar ? jar.amountsCents.map((c) => (c / 100).toFixed(2)).join(", ") : "");
+    setTipFormError(null);
+  }, [draft.tipJar]);
 
   // Add/edit form state
   const [formOpen, setFormOpen] = useState(false);
@@ -47,15 +66,18 @@ export function ProductsTab() {
 
   const refresh = useCallback(async () => {
     try {
-      const [p, s, c] = await Promise.all([
+      const [p, s, c, t] = await Promise.all([
         api.commerce.listProducts({ kyteId: kyte.id }),
         api.commerce.getSales({ kyteId: kyte.id, limit: 50 }),
         api.commerce.getConnectStatus({ kyteId: kyte.id }),
+        api.tipJar.listTips({ kyteId: kyte.id, limit: 50 }),
       ]);
       setProducts(p.products);
       setSales(s.sales);
       setTotals(s.totals);
       setConnect(c);
+      setTips(t.tips);
+      setTipTotals(t.totals);
     } catch (error) {
       toast("Couldn't load your products.", "error");
     } finally {
@@ -192,6 +214,59 @@ export function ProductsTab() {
     }
   }
 
+  // ── Tip jar ──────────────────────────────────────────────────────────────
+  // Config lives in the page draft (profileContent.tipJar) and publishes with
+  // the page, like booking blocks. Tips are separate from product sales.
+
+  function handleToggleTipJar() {
+    if (readOnly) return;
+    if (draft.tipJar) {
+      patchDraft({ tipJar: null });
+      toast("Tip jar removed from your page.", "success");
+    } else {
+      const jar = emptyTipJar();
+      patchDraft({ tipJar: jar });
+      setTipHeading(jar.heading);
+      setTipMessage(jar.message ?? "");
+      setTipAmounts(jar.amountsCents.map((c) => (c / 100).toFixed(2)).join(", "));
+    }
+  }
+
+  function handleSaveTipJar() {
+    setTipFormError(null);
+    if (!tipHeading.trim()) {
+      setTipFormError("Give your tip jar a heading.");
+      return;
+    }
+    const amounts = tipAmounts
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((s) => Math.round(Number(s) * 100));
+    if (amounts.length === 0 || amounts.length > 5) {
+      setTipFormError("Add 1 to 5 amounts, separated by commas.");
+      return;
+    }
+    if (amounts.some((c) => !Number.isFinite(c) || c < 50 || c > 1_000_000)) {
+      setTipFormError("Each amount must be between $0.50 and $10,000.");
+      return;
+    }
+    const sorted = [...amounts].sort((a, b) => a - b);
+    if (new Set(sorted).size !== sorted.length) {
+      setTipFormError("Amounts must be different from each other.");
+      return;
+    }
+    patchDraft({
+      tipJar: {
+        heading: tipHeading.trim(),
+        message: tipMessage.trim() || undefined,
+        amountsCents: sorted,
+        active: true,
+      },
+    });
+    toast("Tip jar saved to your draft. Publish to make it live.", "success");
+  }
+
   if (loading) {
     return <p className="text-sm text-muted-foreground">Loading your products…</p>;
   }
@@ -207,13 +282,15 @@ export function ProductsTab() {
           </p>
         ) : connect.connected && connect.chargesEnabled ? (
           <p className="mt-2 text-sm text-green-700">
-            ✓ Stripe connected — you're ready to sell. You keep 96% of every sale.
+            ✓ Stripe connected — you're ready to sell. FreeTree takes 4% of what's left
+            after Stripe's fee.
           </p>
         ) : (
           <>
             <p className="mt-2 text-sm text-muted-foreground">
-              Connect your Stripe account to start selling. FreeTree takes 4% of each sale —
-              you keep 96%. No monthly fees, ever.
+              Connect your Stripe account to start selling. FreeTree takes 4% of what's
+              left after Stripe's processing fee (on a $100 sale, about $3.87). No monthly
+              fees, ever.
             </p>
             {!readOnly && (
               <button
@@ -328,6 +405,113 @@ export function ProductsTab() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </section>
+
+      {/* ── Tip jar ── */}
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-base font-semibold">Tip jar</h2>
+          {!readOnly && (
+            <button
+              type="button"
+              onClick={handleToggleTipJar}
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-accent-border bg-accent-soft px-3 text-sm font-medium hover:bg-accent-soft/70"
+            >
+              {draft.tipJar ? "Remove tip jar" : "Add tip jar"}
+            </button>
+          )}
+        </div>
+        {!draft.tipJar ? (
+          <p className="text-sm text-muted-foreground">
+            Let visitors send you a tip with no product to buy — preset amounts, same
+            4%-on-net fee as a sale. It shows on your page after you publish.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-3 rounded-card border p-4">
+            {tipFormError && (
+              <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+                {tipFormError}
+              </p>
+            )}
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium">Heading</span>
+              <input
+                type="text"
+                value={tipHeading}
+                onChange={(e) => setTipHeading(e.target.value)}
+                maxLength={120}
+                disabled={readOnly}
+                className="w-full rounded-lg border px-3 py-2 text-sm disabled:opacity-60"
+                placeholder="Leave a tip"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium">Message (optional)</span>
+              <input
+                type="text"
+                value={tipMessage}
+                onChange={(e) => setTipMessage(e.target.value)}
+                maxLength={500}
+                disabled={readOnly}
+                className="w-full rounded-lg border px-3 py-2 text-sm disabled:opacity-60"
+                placeholder="Support my work"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium">Amounts (dollars, comma-separated)</span>
+              <input
+                type="text"
+                value={tipAmounts}
+                onChange={(e) => setTipAmounts(e.target.value)}
+                disabled={readOnly}
+                className="w-full rounded-lg border px-3 py-2 text-sm disabled:opacity-60"
+                placeholder="3, 5, 10"
+              />
+              <span className="mt-1 block text-xs text-muted-foreground">
+                1 to 5 amounts, $0.50 to $10,000 each. Visitors pick one at checkout.
+              </span>
+            </label>
+            {!readOnly && (
+              <div>
+                <button
+                  type="button"
+                  onClick={handleSaveTipJar}
+                  className="rounded-lg bg-[#1B4332] px-4 py-2 text-sm font-semibold text-[#FDF8F0]"
+                >
+                  Save tip jar
+                </button>
+              </div>
+            )}
+            {tipTotals.count > 0 && (
+              <div className="mt-1 border-t pt-3">
+                <p className="text-sm font-medium">
+                  {tipTotals.count} {tipTotals.count === 1 ? "tip" : "tips"} ·{" "}
+                  {formatProductPrice(tipTotals.grossCents, "usd")} total · you keep{" "}
+                  {formatProductPrice(tipTotals.netCents, "usd")}
+                </p>
+                <div className="mt-2 flex flex-col gap-2">
+                  {tips.map((tip) => (
+                    <div key={tip.id} className="flex items-center justify-between text-sm">
+                      <div>
+                        <p className="font-medium">
+                          {formatProductPrice(tip.amountCents, tip.currency)}
+                          {tip.tipMessage ? ` — “${tip.tipMessage}”` : ""}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {tip.buyerEmail ?? "Guest"} ·{" "}
+                          {new Date(tip.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        You keep {formatProductPrice(tip.amountCents - tip.feeCents, tip.currency)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </section>

@@ -32,6 +32,7 @@ import { registerInternalRoutes } from "./routes/internal";
 import { registerAppealRoute } from "./routes/appeal";
 import { registerReportRoute } from "./routes/report";
 import { registerCommerceRoutes } from "./routes/commerce";
+import { registerLiveStatusRoutes } from "./routes/live-status";
 import { registerEmailCaptureRoutes } from "./routes/email-capture";
 
 function authRateClassFor(path: string): RateLimitClass | null {
@@ -150,6 +151,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   registerReportRoute(app);
   registerAppealRoute(app);
   registerCommerceRoutes(app);
+  registerLiveStatusRoutes(app);
   registerEmailCaptureRoutes(app);
   registerDevLogin(app);
   registerImpersonationRoutes(app);

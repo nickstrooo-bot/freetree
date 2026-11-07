@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
+import { prefixHttps } from "@kytelink/schemas";
 import { useApp } from "../../../../lib/app-context";
 import { useEditor } from "../../../../lib/editor/editor-context";
 import { useUsernameAvailability } from "../../../../hooks/use-username-availability";
@@ -170,6 +171,69 @@ export function SettingsTab() {
                 patchDraft({ seoDescription: event.target.value || null })
               }
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Live badge</CardTitle>
+          <CardDescription>
+            Show a red “LIVE NOW” pill on your page when your YouTube channel is
+            live. Checked every couple of minutes — no API key needed.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-3">
+            <TextInput
+              label="YouTube channel"
+              placeholder="https://www.youtube.com/@yourchannel"
+              value={draft.liveBadge?.youtubeChannelUrl ?? ""}
+              onChange={(event) => {
+                const raw = event.target.value.trim();
+                if (!raw) {
+                  patchDraft({ liveBadge: null });
+                  return;
+                }
+                // A bare @handle becomes a full channel URL; anything else gets
+                // the usual https prefix. The live check accepts both forms.
+                const channelUrl = raw.startsWith("@")
+                  ? `https://www.youtube.com/${raw}`
+                  : prefixHttps(raw);
+                patchDraft({
+                  liveBadge: {
+                    enabled: draft.liveBadge?.enabled ?? true,
+                    youtubeChannelUrl: channelUrl,
+                  },
+                });
+              }}
+              onBlur={() => {
+                const url = draft.liveBadge?.youtubeChannelUrl ?? "";
+                if (url && !/youtube\.com|youtu\.be/i.test(url)) {
+                  toast("That doesn't look like a YouTube channel link", "error");
+                  patchDraft({ liveBadge: null });
+                }
+              }}
+            />
+            <div className="flex items-center gap-2">
+              <Switch
+                id="live-badge-toggle"
+                checked={draft.liveBadge?.enabled ?? false}
+                disabled={!draft.liveBadge?.youtubeChannelUrl}
+                onCheckedChange={(checked) => {
+                  if (draft.liveBadge) {
+                    patchDraft({ liveBadge: { ...draft.liveBadge, enabled: checked } });
+                  }
+                }}
+              />
+              <Label htmlFor="live-badge-toggle" className="text-muted-foreground">
+                {draft.liveBadge?.enabled ? "On" : "Off"}
+              </Label>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              If YouTube blocks the check from the server, the badge just stays off —
+              it never shows the wrong state.
+            </p>
           </div>
         </CardContent>
       </Card>

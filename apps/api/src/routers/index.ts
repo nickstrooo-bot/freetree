@@ -11,6 +11,7 @@ import { domainsRouter } from "./domains";
 import { adminRouter } from "./admin";
 import { commerceRouter } from "./commerce";
 import { emailCaptureRouter } from "./email-capture";
+import { tipJarRouter } from "./tip-jar";
 import { analyticsRouter } from "../analytics";
 import { assetsRouter } from "../assets";
 
@@ -29,6 +30,7 @@ export const appRouter = router({
   admin: adminRouter,
   commerce: commerceRouter,
   emailCapture: emailCaptureRouter,
+  tipJar: tipJarRouter,
 });
 
 type ApiAppRouter = typeof appRouter;

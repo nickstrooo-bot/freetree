@@ -5,10 +5,12 @@ import { QrCode as QrCodeIcon } from "lucide-react";
 // otherwise ship to every visitor.
 import { FreeTreeQrCode, QR_BG_COLOR } from "@kytelink/ui";
 import { ProfileView } from "@kytelink/ui/profile-view";
-import type { PublicProduct, PublicEmailCaptureBlock } from "@kytelink/ui";
+import type { PublicProduct, PublicEmailCaptureBlock, PublicTipJar } from "@kytelink/ui";
 import type { Icon, Link, ProfileContent } from "@kytelink/schemas";
 import { sendEventBeacon, sendLinkBeacon, sendPageBeacon } from "../../lib/beacons";
 import { startCheckout } from "../../lib/api/products-fetch";
+import { startTip } from "../../lib/api/tip-fetch";
+import { fetchLiveStatus, type LiveStatus } from "../../lib/api/live-status-fetch";
 import { subscribeEmail } from "../../lib/api/email-capture-fetch";
 import { Modal } from "../ui/modal";
 import { Button } from "../ui/button";
@@ -74,7 +76,33 @@ export function PublicProfile({
   const [qrOpen, setQrOpen] = useState(false);
   const [buyingProductId, setBuyingProductId] = useState<string | null>(null);
   const [buyError, setBuyError] = useState<string | null>(null);
+  const [tipping, setTipping] = useState(false);
+  const [tipError, setTipError] = useState<string | null>(null);
+  const [liveStatus, setLiveStatus] = useState<LiveStatus | null>(null);
   const profileUrl = `https://${SHARE_DOMAINS[0]}/${username}`;
+
+  // Live badge: poll the api every 2 minutes while the page is open (the api
+  // caches per username for the same interval). A failed check fails quiet —
+  // the badge stays hidden, never flips on a bad read.
+  const liveBadgeEnabled = content.liveBadge?.enabled ?? false;
+  useEffect(() => {
+    if (!liveBadgeEnabled) return;
+    let cancelled = false;
+    async function load() {
+      try {
+        const status = await fetchLiveStatus(username);
+        if (!cancelled) setLiveStatus(status);
+      } catch {
+        // Fail quiet: badge stays hidden.
+      }
+    }
+    void load();
+    const id = setInterval(() => void load(), 120_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [liveBadgeEnabled, username]);
 
   useEffect(() => {
     if (!kyteId) return;
@@ -123,6 +151,34 @@ export function PublicProfile({
     }
   }
 
+  // The tip jar lives in profileContent (content.tipJar) — published with the
+  // page, so no extra fetch. A null/inactive jar renders nothing.
+  const tipJar: PublicTipJar | null =
+    content.tipJar && content.tipJar.active
+      ? {
+          heading: content.tipJar.heading,
+          message: content.tipJar.message ?? null,
+          amountsCents: content.tipJar.amountsCents,
+        }
+      : null;
+
+  async function onTip(amountCents: number, tipMessage?: string) {
+    setTipError(null);
+    setTipping(true);
+    try {
+      await startTip(username, amountCents, tipMessage);
+      // startTip redirects to Stripe on success; we never get here.
+    } catch (error) {
+      setTipping(false);
+      setTipError(
+        error instanceof Error && error.message === "SELLER_NOT_READY"
+          ? "This seller hasn't finished setting up payments yet. Try again soon."
+          : "Couldn't start checkout. Please try again.",
+      );
+      throw error;
+    }
+  }
+
   return (
     <div className="relative min-h-screen" onClickCapture={onClickCapture}>
       <ProfileView
@@ -136,6 +192,10 @@ export function PublicProfile({
         checkoutEnabled={checkoutEnabled}
         emailCaptureBlock={emailCaptureBlock}
         onEmailSubscribe={(email) => subscribeEmail(username, email)}
+        tipJar={tipJar}
+        onTip={onTip}
+        tipping={tipping}
+        liveBadge={liveStatus}
       />
       {buyError ? (
         <div
@@ -143,6 +203,14 @@ export function PublicProfile({
           className="mx-auto mt-2 max-w-md rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-800"
         >
           {buyError}
+        </div>
+      ) : null}
+      {tipError ? (
+        <div
+          role="alert"
+          className="mx-auto mt-2 max-w-md rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-800"
+        >
+          {tipError}
         </div>
       ) : null}
       <button

@@ -178,6 +178,15 @@ model Kyte {
   icons            Json     @default("[]")
   // Booking buttons (Calendly/Cal.com URLs etc.), same JSON-array pattern as links.
   bookingBlocks    Json     @default("[]")
+  // Scheduled blocks: link buttons that go live at startsAt, optionally expire
+  // at endsAt, and count down until they open. Same JSON-array pattern.
+  scheduledBlocks  Json     @default("[]")
+  // Live badge config (YouTube channel for the "LIVE NOW" pill).
+  // Null = no badge on this profile.
+  liveBadge          Json?
+  // Tip jar config ("leave a tip" block), mirrored from profileContent.
+  // Null = no tip jar on this profile.
+  tipJar           Json?
   avatarAssetId    String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -212,6 +221,12 @@ model PublishedKyte {
   icons            Json             @default("[]")
   // Booking buttons, mirrored from the draft at publish time.
   bookingBlocks    Json             @default("[]")
+  // Scheduled blocks, mirrored from the draft at publish time.
+  scheduledBlocks  Json             @default("[]")
+  // Live badge config, mirrored from the draft at publish time. Null = none.
+  liveBadge          Json?
+  // Tip jar config, mirrored from the draft at publish time. Null = none.
+  tipJar           Json?
   avatarAssetId    String?
   moderationStatus ModerationStatus @default(APPROVED)
   publishSeq       Int              @default(0)
@@ -495,6 +510,11 @@ model Product {
   // When true, Stripe Checkout shows a promo-code field. Sellers create and
   // manage their codes in their own Stripe dashboard (Billing > Coupons).
   allowPromoCodes Boolean @default(false)
+  // Product kind: "digital" (default, a file/external download) or "tip" (the
+  // hidden backing row for a kyte's tip jar — one per kyte, never listed as a
+  // product, never shown in the store). Tip purchases carry the chosen preset
+  // amount on the Purchase row, not on this row's priceCents.
+  kind            String  @default("digital")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -517,6 +537,8 @@ model Purchase {
   currency            String    @default("usd")
   // pending | completed | refunded
   status              String    @default("pending")
+  // Optional message the buyer left with a tip. Null for product purchases.
+  tipMessage          String?
   downloadToken       String    @unique @default(cuid())
   downloadExpiresAt   DateTime?
   downloadCount       Int       @default(0)

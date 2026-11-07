@@ -117,6 +117,13 @@ const EXPECTED_PROCEDURES = [
   "commerce.getConnectStatus",
   "commerce.createOnboardingLink",
   "commerce.getSales",
+  "emailCapture.getBlock",
+  "emailCapture.upsertBlock",
+  "emailCapture.deleteBlock",
+  "emailCapture.listSubscribers",
+  "emailCapture.deleteSubscriber",
+  "emailCapture.exportCsv",
+  "tipJar.listTips",
 ] as const;
 
 function makeContext(overrides: Partial<TrpcContext> = {}): TrpcContext {

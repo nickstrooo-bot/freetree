@@ -6,3 +6,5 @@ export * from "./colors-data";
 export * from "./fonts-data";
 export * from "./icon-data";
 export * from "./link-data";
+export * from "./brand-data";
+export * from "./scheduled-data";

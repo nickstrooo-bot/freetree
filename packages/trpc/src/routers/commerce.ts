@@ -19,6 +19,9 @@ export const productSchema = z.object({
   fileSizeBytes: z.number().int().nullable(),
   hasFile: z.boolean(),
   externalUrl: z.string().nullable(),
+  // "digital" = a sellable file/external product; "tip" = the hidden backing
+  // row for a kyte's tip jar (never listed, never sold directly).
+  kind: z.string(),
   active: z.boolean(),
   allowPromoCodes: z.boolean(),
   sortOrder: z.number().int(),

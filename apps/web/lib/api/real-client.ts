@@ -311,6 +311,10 @@ export function createRealClient(getCurrentUserId: () => string): ApiClient {
         }),
       exportCsv: ({ kyteId }) => run(() => c.emailCapture.exportCsv.query({ kyteId })),
     },
+    tipJar: {
+      listTips: ({ kyteId, limit, cursor }) =>
+        run(() => c.tipJar.listTips.query({ kyteId, limit: limit ?? 50, cursor })),
+    },
 
     resolveKyteSummary: (kyteId) =>
       run(async () => {

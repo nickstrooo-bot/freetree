@@ -3,8 +3,11 @@ import type { CSSProperties } from "react";
 // runtime into the public profile's client bundle for four lookup tables.
 // Types are erased at compile time, so those stay on the barrel.
 import {
+  BRAND_FA_ICON,
+  BRAND_STYLES,
   classifyLinkEmoji,
   COLOR_HEX,
+  detectLinkBrand,
   FONT_FAMILIES,
   ICON_FA_KEYS,
 } from "@kytelink/schemas/profile-data";
@@ -23,7 +26,9 @@ import { getFaIcon } from "../fa-icons";
 
 import { ProductBlock, type PublicProduct } from "./product-block";
 import { BookingBlockView } from "./booking-block";
+import { ScheduledBlockView } from "./scheduled-block";
 import { EmailSignupBlock, type PublicEmailCaptureBlock } from "./email-signup-block";
+import { TipJarBlock, type PublicTipJar } from "./tip-jar-block";
 
 export interface ProfileViewProps {
   content: ProfileContent;
@@ -44,6 +49,14 @@ export interface ProfileViewProps {
   emailCaptureBlock?: PublicEmailCaptureBlock | null;
   /** Called when a visitor submits the email form. */
   onEmailSubscribe?: (email: string) => Promise<{ alreadySubscribed: boolean }>;
+  /** Tip jar block. Rendered after products. Null = no tip jar on this profile. */
+  tipJar?: PublicTipJar | null;
+  /** Called when a visitor tips. Parent handles the checkout redirect. */
+  onTip?: (amountCents: number, tipMessage?: string) => Promise<void>;
+  /** True while a tip checkout is starting (shows loading state). */
+  tipping?: boolean;
+  /** Live-now status for the seller's YouTube channel. Null = no badge. */
+  liveBadge?: { isLive: boolean; videoUrl: string | null } | null;
 }
 
 const WATERMARK_URL = "https://freetree.link";
@@ -92,10 +105,15 @@ function profileStyles(themeKey: string, extras: ThemeExtras): string {
     `@media (min-width:480px){${scope} .kyte-name{font-size:22px;}}`,
     `${scope} .kyte-description{font-size:14px;}`,
     `${scope} .kyte-link{transition:all .15s ease;}`,
-    `${scope} .kyte-link:hover{background:${extras.link.hoverBackground} !important;border:${extras.link.hoverBorder} !important;color:${extras.link.hoverColor} !important;}`,
+    // Plain links hover with the theme's hover colors. Brand links (LittleLink
+    // palette) keep their brand colors and darken instead — the theme hover
+    // would paint over the brand. Matches LittleLink's own hover effect.
+    `${scope} .kyte-link:not([data-brand]):hover{background:${extras.link.hoverBackground} !important;border:${extras.link.hoverBorder} !important;color:${extras.link.hoverColor} !important;}`,
+    `${scope} .kyte-link[data-brand]:hover{filter:brightness(90%);transform:translateY(-1px);}`,
     `${scope} .kyte-icon{transition:color .15s ease, opacity .15s ease;}`,
     `${scope} .kyte-icon:hover{color:${extras.iconHoverColor} !important;}`,
     `${scope} .kyte-avatar-img{position:relative;z-index:1;}`,
+    `@keyframes kyte-live-pulse{0%{opacity:1}50%{opacity:.35}100%{opacity:1}}`,
     `${scope} .kyte-avatar-lqip{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(10px);transform:scale(1.15);z-index:0;}`,
     `@media (prefers-reduced-motion: reduce){${scope} .kyte-link,${scope} .kyte-icon{transition:none;}}`,
   ].join("");
@@ -196,6 +214,10 @@ export function ProfileView({
   checkoutEnabled = true,
   emailCaptureBlock = null,
   onEmailSubscribe,
+  tipJar = null,
+  onTip,
+  tipping = false,
+  liveBadge = null,
 }: ProfileViewProps) {
   const themeKey = themeOverride ?? content.theme;
   const extras = THEME_EXTRAS[themeKey] ?? THEME_EXTRAS.default;
@@ -259,6 +281,41 @@ export function ProfileView({
             name={displayName}
             extras={extras}
           />
+
+          {liveBadge?.isLive && liveBadge.videoUrl ? (
+            <a
+              data-freetree-live-badge=""
+              href={liveBadge.videoUrl}
+              target="_blank"
+              rel={USER_LINK_REL}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                marginTop: "16px",
+                padding: "6px 12px",
+                borderRadius: "9999px",
+                background: "#FF0000",
+                color: "#ffffff",
+                fontSize: "13px",
+                fontWeight: 700,
+                letterSpacing: "0.04em",
+                textDecoration: "none",
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  background: "#ffffff",
+                  animation: "kyte-live-pulse 1.2s ease-in-out infinite",
+                }}
+              />
+              LIVE
+            </a>
+          ) : null}
 
           {displayName ? (
             <h1
@@ -350,6 +407,18 @@ export function ProfileView({
         >
           {content.links.map((link, index) => {
             const kind = classifyLinkEmoji(link.emoji);
+            // Brand buttons (LittleLink palette): a link to a known brand wears
+            // the brand's colors. An explicit seller color wins over the brand
+            // treatment entirely — the seller's choice is never overridden.
+            const brand = detectLinkBrand(link.link);
+            const brandStyle = brand ? BRAND_STYLES[brand] : undefined;
+            const useBrand = Boolean(brandStyle && !link.color);
+            // A link with no emoji/icon of its own gets the brand's glyph in the
+            // prefix chip (LittleLink shows the brand mark on the button). The
+            // glyph inherits the button's text color.
+            const brandIconKey = brand && kind === "none" ? BRAND_FA_ICON[brand] : undefined;
+            const prefixKind = brandIconKey ? "icon" : kind;
+            const prefixIconKey = kind === "icon" ? link.emoji : brandIconKey;
             const linkStyle: CSSProperties = {
               display: "flex",
               alignItems: "center",
@@ -357,12 +426,12 @@ export function ProfileView({
               minHeight: "56px",
               padding: "0 16px",
               borderRadius: extras.linkRadius,
-              background: extras.link.background,
-              border: extras.link.border,
+              background: useBrand ? brandStyle!.background : extras.link.background,
+              border: useBrand && brandStyle!.border ? brandStyle!.border : extras.link.border,
               boxShadow: extras.link.boxShadow,
               backdropFilter: extras.link.backdropFilter,
               WebkitBackdropFilter: extras.link.backdropFilter,
-              color: linkColor,
+              color: useBrand ? brandStyle!.text : linkColor,
               textDecoration: "none",
               cursor: "pointer",
               textShadow,
@@ -377,13 +446,21 @@ export function ProfileView({
               borderRadius: "8px",
               overflow: "hidden",
               flexShrink: 0,
-              background: kind === "none" ? "transparent" : (link.color ?? extras.link.prefixBackground),
+              // Brand glyphs sit directly on the brand background (no chip),
+              // exactly like LittleLink's icon-on-button markup.
+              background:
+                prefixKind === "none"
+                  ? "transparent"
+                  : brandIconKey && !link.color
+                    ? "transparent"
+                    : (link.color ?? extras.link.prefixBackground),
             };
 
             return (
               <a
                 key={`${link.link}-${index}`}
                 className="kyte-link"
+                data-brand={brand ?? undefined}
                 href={normalizeHref(link.link)}
                 target="_blank"
                 rel={USER_LINK_REL}
@@ -393,13 +470,13 @@ export function ProfileView({
                   onLinkClick?.(link);
                 }}
               >
-                <span style={prefixStyle} data-link-prefix={kind}>
-                  {kind === "icon" ? (
+                <span style={prefixStyle} data-link-prefix={prefixKind}>
+                  {prefixKind === "icon" ? (
                     (() => {
-                      const Icon = getFaIcon(link.emoji ?? undefined);
+                      const Icon = getFaIcon(prefixIconKey ?? undefined);
                       return <Icon size={26} aria-hidden="true" />;
                     })()
-                  ) : kind === "image" ? (
+                  ) : prefixKind === "image" ? (
                     <img
                       src={link.emoji}
                       alt=""
@@ -407,7 +484,7 @@ export function ProfileView({
                       height={36}
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
-                  ) : kind === "emoji" ? (
+                  ) : prefixKind === "emoji" ? (
                     <span style={{ fontSize: "24px", lineHeight: 1 }}>{link.emoji}</span>
                   ) : null}
                 </span>
@@ -458,6 +535,30 @@ export function ProfileView({
           </div>
         ) : null}
 
+        {(content.scheduledBlocks ?? []).length > 0 ? (
+          <div
+            data-freetree-scheduled=""
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              width: "100%",
+              marginTop: "18px",
+            }}
+          >
+            {(content.scheduledBlocks ?? []).map((block, index: number) => (
+              <ScheduledBlockView
+                key={`${block.url}-${index}`}
+                block={block}
+                extras={extras}
+                linkColor={linkColor}
+                textShadow={textShadow}
+                isPreview={isPreview}
+              />
+            ))}
+          </div>
+        ) : null}
+
         {products.length > 0 ? (
           <div
             data-freetree-products=""
@@ -481,6 +582,29 @@ export function ProfileView({
                 onBuy={(p) => onProductBuy?.(p)}
               />
             ))}
+          </div>
+        ) : null}
+
+        {tipJar && onTip ? (
+          <div
+            data-freetree-tip-jar-section=""
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              width: "100%",
+              marginTop: "18px",
+            }}
+          >
+            <TipJarBlock
+              jar={tipJar}
+              extras={extras}
+              linkColor={linkColor}
+              textShadow={textShadow}
+              onTip={onTip}
+              tipping={tipping}
+              checkoutEnabled={checkoutEnabled}
+            />
           </div>
         ) : null}
 

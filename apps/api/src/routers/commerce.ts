@@ -39,6 +39,7 @@ function toProductRow(p: any) {
     fileSizeBytes: p.fileSizeBytes,
     hasFile: Boolean(p.fileKey),
     externalUrl: p.externalUrl,
+    kind: p.kind ?? "digital",
     active: p.active,
     allowPromoCodes: p.allowPromoCodes ?? false,
     sortOrder: p.sortOrder,
@@ -95,7 +96,9 @@ export const commerceRouter = router({
     const db = getDb();
     const k = ctx.access.kyte!;
     const products = await db.product.findMany({
-      where: { kyteId: k.id },
+      // The tip jar's hidden backing row (kind "tip") is managed through the
+      // tip jar, never through the product editor — keep it out of this list.
+      where: { kyteId: k.id, kind: "digital" },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     });
     return { products: products.map(toProductRow) };

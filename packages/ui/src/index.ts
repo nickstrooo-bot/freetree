@@ -11,6 +11,11 @@ export {
   type PublicEmailCaptureBlock,
 } from "./components/email-signup-block";
 
+export {
+  TipJarBlock,
+  type PublicTipJar,
+} from "./components/tip-jar-block";
+
 export { ErrorPage, type ErrorPageProps } from "./components/error-page";
 
 export {
