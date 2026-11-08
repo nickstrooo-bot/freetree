@@ -233,10 +233,28 @@ export class PrismaStore implements Store {
     );
   }
 
+  // Voice intro projection: same asset-id → URL lookup as avatars, but an
+  // audio clip has no lqip — the projection is just { url }.
+  private async voiceIntrosByAssetId(
+    assetIds: (string | null)[],
+  ): Promise<Map<string, ProfileContent["voiceIntro"]>> {
+    const ids = assetIds.filter((id): id is string => id !== null);
+    if (ids.length === 0) return new Map();
+    const assets = await this.db.asset.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, key: true },
+    });
+    return new Map(assets.map((asset) => [asset.id, { url: getCdnUrl(asset.key) }]));
+  }
+
   async kyteById(id: string): Promise<KyteRow | null> {
     const kyte = await this.db.kyte.findUnique({ where: { id }, include: { published: true } });
     if (!kyte) return null;
     const avatars = await this.avatarsByAssetId([kyte.avatarAssetId, kyte.published?.avatarAssetId ?? null]);
+    const voiceIntros = await this.voiceIntrosByAssetId([
+      kyte.voiceIntroAssetId,
+      kyte.published?.voiceIntroAssetId ?? null,
+    ]);
     return {
       id: kyte.id,
       orgId: kyte.orgId,
@@ -244,12 +262,18 @@ export class PrismaStore implements Store {
       draft: {
         ...columnsToContent(kyte),
         avatar: kyte.avatarAssetId ? avatars.get(kyte.avatarAssetId) ?? null : null,
+        voiceIntro: kyte.voiceIntroAssetId
+          ? voiceIntros.get(kyte.voiceIntroAssetId) ?? null
+          : null,
       },
       published: kyte.published
         ? {
             ...columnsToContent(kyte.published),
             avatar: kyte.published.avatarAssetId
               ? avatars.get(kyte.published.avatarAssetId) ?? null
+              : null,
+            voiceIntro: kyte.published.voiceIntroAssetId
+              ? voiceIntros.get(kyte.published.voiceIntroAssetId) ?? null
               : null,
           }
         : null,
@@ -279,6 +303,9 @@ export class PrismaStore implements Store {
     const avatars = await this.avatarsByAssetId(
       kytes.flatMap((kyte) => [kyte.avatarAssetId, kyte.published?.avatarAssetId ?? null]),
     );
+    const voiceIntros = await this.voiceIntrosByAssetId(
+      kytes.flatMap((kyte) => [kyte.voiceIntroAssetId, kyte.published?.voiceIntroAssetId ?? null]),
+    );
     return kytes.map((kyte) => ({
       id: kyte.id,
       orgId: kyte.orgId,
@@ -286,12 +313,18 @@ export class PrismaStore implements Store {
       draft: {
         ...columnsToContent(kyte),
         avatar: kyte.avatarAssetId ? avatars.get(kyte.avatarAssetId) ?? null : null,
+        voiceIntro: kyte.voiceIntroAssetId
+          ? voiceIntros.get(kyte.voiceIntroAssetId) ?? null
+          : null,
       },
       published: kyte.published
         ? {
             ...columnsToContent(kyte.published),
             avatar: kyte.published.avatarAssetId
               ? avatars.get(kyte.published.avatarAssetId) ?? null
+              : null,
+            voiceIntro: kyte.published.voiceIntroAssetId
+              ? voiceIntros.get(kyte.published.voiceIntroAssetId) ?? null
               : null,
           }
         : null,
@@ -343,6 +376,32 @@ export class PrismaStore implements Store {
     await this.db.kyte.update({ where: { id: kyteId }, data: { avatarAssetId: assetId } });
   }
 
+  async setKyteVoiceIntro(kyteId: string, assetId: string | null): Promise<void> {
+    await this.db.kyte.update({ where: { id: kyteId }, data: { voiceIntroAssetId: assetId } });
+  }
+
+  async takeKyteVoiceIntro(kyteId: string): Promise<StoredAsset | null> {
+    return this.db.$transaction(async (tx) => {
+      const kyte = await tx.kyte.findUnique({
+        where: { id: kyteId },
+        select: { voiceIntroAssetId: true },
+      });
+      if (!kyte?.voiceIntroAssetId) return null;
+      const asset = await tx.asset.findUnique({ where: { id: kyte.voiceIntroAssetId } });
+      await tx.kyte.update({ where: { id: kyteId }, data: { voiceIntroAssetId: null } });
+      if (!asset) return null;
+      await tx.asset.delete({ where: { id: asset.id } });
+      return { ...asset };
+    });
+  }
+
+  async countCompletedPurchases(kyteId: string): Promise<number> {
+    // status is a plain string column ("pending" | "completed" | "refunded").
+    // Tips are Purchases too (joined to the kyte's hidden tip Product), so
+    // one count covers product sales + tips — the milestone meter's number.
+    return this.db.purchase.count({ where: { kyteId, status: "completed" } });
+  }
+
   async publishKyte(input: { kyteId: string; actorUserId: string }): Promise<PublishResult> {
     const result = await this.db.$transaction(async (tx) => {
       const kyte = await tx.kyte.findUnique({
@@ -354,6 +413,7 @@ export class PrismaStore implements Store {
       const columns = {
         ...contentToColumns(content),
         avatarAssetId: kyte.avatarAssetId,
+        voiceIntroAssetId: kyte.voiceIntroAssetId,
       };
       // publishSeq must be a DB-atomic increment: two concurrent publishes on an
       // already-published kyte must never read-then-write the same seq. Prisma

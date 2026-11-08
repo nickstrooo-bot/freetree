@@ -47,6 +47,8 @@ const ORPHANED_SQL = Prisma.sql`(
     WHEN 'OG_IMAGE' THEN FALSE
     WHEN 'AVATAR' THEN
       COALESCE(k."avatarAssetId", '') <> a.id AND COALESCE(p."avatarAssetId", '') <> a.id
+    WHEN 'VOICE_INTRO' THEN
+      COALESCE(k."voiceIntroAssetId", '') <> a.id AND COALESCE(p."voiceIntroAssetId", '') <> a.id
     ELSE
       position(a.key IN concat(
         k.links::text, k.icons::text,

@@ -30,6 +30,12 @@ import { ScheduledBlockView } from "./scheduled-block";
 import { EmailSignupBlock, type PublicEmailCaptureBlock } from "./email-signup-block";
 import { TipJarBlock, type PublicTipJar } from "./tip-jar-block";
 import { FormBlock, type PublicFormBlock } from "./form-block";
+import {
+  AboutBlock,
+  MilestoneMeter,
+  NowLineBlock,
+  VoiceIntroButton,
+} from "./soul-blocks";
 
 export interface ProfileViewProps {
   content: ProfileContent;
@@ -62,6 +68,11 @@ export interface ProfileViewProps {
   onFormSubmit?: (answers: Record<string, string>) => Promise<{ successText: string }>;
   /** Live-now status for the seller's YouTube channel. Null = no badge. */
   liveBadge?: { isLive: boolean; videoUrl: string | null } | null;
+  /** Completed purchases (product sales + tips) for this kyte — the
+   * milestone meter's number. Computed server-side, never stored. Undefined
+   * means the caller does not know the count, and the meter stays hidden
+   * rather than showing a wrong number. */
+  supporterCount?: number;
 }
 
 const WATERMARK_URL = "https://getfreetree.com";
@@ -225,6 +236,7 @@ export function ProfileView({
   formBlock = null,
   onFormSubmit,
   liveBadge = null,
+  supporterCount,
 }: ProfileViewProps) {
   const themeKey = themeOverride ?? content.theme;
   const extras = THEME_EXTRAS[themeKey] ?? THEME_EXTRAS.default;
@@ -288,6 +300,17 @@ export function ProfileView({
             name={displayName}
             extras={extras}
           />
+
+          {content.voiceIntro ? (
+            <VoiceIntroButton
+              url={content.voiceIntro.url}
+              name={displayName}
+              extras={extras}
+              linkColor={linkColor}
+              textShadow={textShadow}
+              font={font}
+            />
+          ) : null}
 
           {liveBadge?.isLive && liveBadge.videoUrl ? (
             <a
@@ -362,7 +385,40 @@ export function ProfileView({
               {content.description}
             </p>
           ) : null}
+
+          {content.about ? (
+            <AboutBlock
+              text={content.about}
+              extras={extras}
+              linkColor={descriptionColor}
+              textShadow={textShadow}
+              font={font}
+            />
+          ) : null}
         </div>
+
+        {content.nowLine ? (
+          <NowLineBlock
+            text={content.nowLine.text}
+            updatedAt={content.nowLine.updatedAt}
+            extras={extras}
+            linkColor={linkColor}
+            textShadow={textShadow}
+            font={font}
+          />
+        ) : null}
+
+        {content.milestone && typeof supporterCount === "number" ? (
+          <MilestoneMeter
+            goal={content.milestone.goal}
+            label={content.milestone.label ?? "supporters"}
+            count={supporterCount}
+            extras={extras}
+            linkColor={linkColor}
+            textShadow={textShadow}
+            font={font}
+          />
+        ) : null}
 
         {content.icons.length > 0 ? (
           <div

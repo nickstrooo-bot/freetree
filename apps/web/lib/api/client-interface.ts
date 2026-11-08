@@ -267,6 +267,7 @@ export interface ApiClient {
       sizeBytes: number;
     }): Promise<CreateUploadResult>;
     finalize(input: { assetId: string }): Promise<{ url: string; lqip: string | null }>;
+    clearVoiceIntro(input: { kyteId: string }): Promise<{ ok: boolean }>;
   };
   analytics: {
     overview(input: AnalyticsWindow): Promise<AnalyticsOverview>;

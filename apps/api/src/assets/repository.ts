@@ -7,7 +7,7 @@ export interface PendingUpload {
   assetId: string;
   kyteId: string;
   uploadedById: string;
-  kind: Extract<AssetKind, "AVATAR" | "LINK_IMAGE">;
+  kind: Extract<AssetKind, "AVATAR" | "LINK_IMAGE" | "VOICE_INTRO">;
   contentType: string;
   declaredSizeBytes: number;
   rawKey: string;

@@ -23,7 +23,7 @@ export function hasControlChars(value: string): boolean {
   return CONTROL_CHARS_RE.test(value);
 }
 
-function rejectControlChars(schema: z.ZodString) {
+export function rejectControlChars(schema: z.ZodString) {
   return schema.refine((value) => !hasControlChars(value), {
     message: "must not contain control characters",
   });

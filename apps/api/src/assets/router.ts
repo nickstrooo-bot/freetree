@@ -6,6 +6,10 @@ import {
   isKyteEffectivelySuspended,
   LIMIT_DEFAULTS,
   resolveLimit,
+  VOICE_INTRO_CONTENT_TYPES,
+  VOICE_INTRO_EXTENSION,
+  VOICE_INTRO_MAX_BYTES,
+  type VoiceIntroContentType,
 } from "@kytelink/schemas";
 import { featureDisabled, kyteSuspended, limitReached, router } from "@kytelink/trpc";
 import { authed, kyte } from "../trpc/procedures";
@@ -23,7 +27,31 @@ import { sharpNormalizeModule, type NormalizeKind } from "./sharp-normalize";
 import { repositoryFor, type AssetRow } from "./repository";
 
 const ALLOWED_CONTENT_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
-const UPLOADABLE_KINDS = new Set(["AVATAR", "LINK_IMAGE"]);
+const ALLOWED_AUDIO_TYPES = new Set<string>(VOICE_INTRO_CONTENT_TYPES);
+const UPLOADABLE_KINDS = new Set(["AVATAR", "LINK_IMAGE", "VOICE_INTRO"]);
+
+// Magic-byte check for audio uploads (the image path gets the same guarantee
+// from sharp, which refuses non-images). MP3: an ID3 tag or an MPEG frame
+// sync. M4A/MP4: an ftyp box at offset 4. Anything else is rejected — the
+// declared content type alone is not trusted. Takes Uint8Array (what
+// getObjectBuffer returns) and compares bytes directly — no Buffer needed.
+function isAudioBytes(buffer: Uint8Array, contentType: string): boolean {
+  if (contentType === "audio/mpeg") {
+    // "ID3" = 0x49 0x44 0x33
+    if (buffer.length >= 3 && buffer[0] === 0x49 && buffer[1] === 0x44 && buffer[2] === 0x33) {
+      return true;
+    }
+    return buffer.length >= 2 && buffer[0] === 0xff && (buffer[1]! & 0xe0) === 0xe0;
+  }
+  // "ftyp" = 0x66 0x74 0x79 0x70 at offset 4
+  return (
+    buffer.length >= 8 &&
+    buffer[4] === 0x66 &&
+    buffer[5] === 0x74 &&
+    buffer[6] === 0x79 &&
+    buffer[7] === 0x70
+  );
+}
 
 function assetUrl(key: string): { url: string; lqip: string } {
   return { url: getCdnUrl(key), lqip: getLqipUrl(key) };
@@ -76,15 +104,31 @@ export const assetsRouter = router({
           message: "OG images are generated server-side and cannot be uploaded directly.",
         });
       }
-      if (!ALLOWED_CONTENT_TYPES.has(input.contentType)) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: `Unsupported content type: ${input.contentType}` });
-      }
-      const uploadMax = resolveLimit(
-        LIMIT_DEFAULTS.uploadMaxBytes,
-        ctx.access.org.limitOverrides.uploadMaxBytes,
-      );
-      if (input.sizeBytes > uploadMax) {
-        throw limitReached(`Uploads are capped at ${uploadMax} bytes.`);
+      // Voice intros get their own allowlist + cap: mp3/m4a only, ~5 MB. The
+      // 60-second duration cap is enforced by the editor before upload (it
+      // reads the clip length from the file); the server has no audio prober,
+      // so the size cap is the hard backstop here.
+      if (input.kind === "VOICE_INTRO") {
+        if (!ALLOWED_AUDIO_TYPES.has(input.contentType)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Voice intros must be mp3 or m4a audio.",
+          });
+        }
+        if (input.sizeBytes > VOICE_INTRO_MAX_BYTES) {
+          throw limitReached(`Voice intros are capped at ${VOICE_INTRO_MAX_BYTES} bytes.`);
+        }
+      } else {
+        if (!ALLOWED_CONTENT_TYPES.has(input.contentType)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: `Unsupported content type: ${input.contentType}` });
+        }
+        const uploadMax = resolveLimit(
+          LIMIT_DEFAULTS.uploadMaxBytes,
+          ctx.access.org.limitOverrides.uploadMaxBytes,
+        );
+        if (input.sizeBytes > uploadMax) {
+          throw limitReached(`Uploads are capped at ${uploadMax} bytes.`);
+        }
       }
       if (isRedisLike(ctx.redis)) {
         await enforceRateLimit(
@@ -111,7 +155,7 @@ export const assetsRouter = router({
         assetId,
         kyteId: input.kyteId,
         uploadedById: ctx.user.id,
-        kind: input.kind as "AVATAR" | "LINK_IMAGE",
+        kind: input.kind as "AVATAR" | "LINK_IMAGE" | "VOICE_INTRO",
         contentType: input.contentType,
         declaredSizeBytes: input.sizeBytes,
         rawKey,
@@ -138,6 +182,54 @@ export const assetsRouter = router({
       await assertNotSuspended(ctx.store, access);
 
       repo.takePendingUpload(input.assetId);
+
+      // Voice intro: audio is stored as-is — no sharp normalization, no lqip.
+      // The raw object moves to its final key with the extension matching its
+      // declared audio type, the magic bytes are checked (the image path gets
+      // the same guarantee from sharp), and the kyte's voice intro points at it.
+      if (pending.kind === "VOICE_INTRO") {
+        const ext = VOICE_INTRO_EXTENSION[pending.contentType as VoiceIntroContentType];
+        const finalKey = buildAssetKey(pending.kyteId, "VOICE_INTRO", ulid(), ext);
+        const head = await headObject(pending.rawKey);
+        if (head.sizeBytes > VOICE_INTRO_MAX_BYTES) {
+          await deleteObject(pending.rawKey).catch(() => undefined);
+          throw limitReached(`Voice intros are capped at ${VOICE_INTRO_MAX_BYTES} bytes.`);
+        }
+        const raw = await getObjectBuffer(pending.rawKey);
+        if (!isAudioBytes(raw, pending.contentType)) {
+          await deleteObject(pending.rawKey).catch(() => undefined);
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Uploaded file is not a valid audio file.",
+          });
+        }
+        await putObject(finalKey, raw, pending.contentType);
+        await deleteObject(pending.rawKey).catch(() => undefined);
+
+        const voiceRow: AssetRow = {
+          id: input.assetId,
+          kyteId: pending.kyteId,
+          uploadedById: pending.uploadedById,
+          key: finalKey,
+          kind: "VOICE_INTRO",
+          contentType: pending.contentType,
+          sizeBytes: head.sizeBytes,
+          width: null,
+          height: null,
+          createdAt: new Date(),
+        };
+        await repo.insertAsset(voiceRow);
+
+        const voiceUrl = getCdnUrl(finalKey);
+        if (access.kyte) {
+          await ctx.store.setKyteVoiceIntro(access.kyte.id, voiceRow.id);
+          await ctx.store.updateDraft(access.kyte.id, {
+            ...access.kyte.draft,
+            voiceIntro: { url: voiceUrl },
+          });
+        }
+        return { url: voiceUrl, lqip: null };
+      }
 
       const finalKey = buildAssetKey(pending.kyteId, pending.kind, ulid(), "webp");
       const lqipKey = buildLqipKey(finalKey);
@@ -201,6 +293,24 @@ export const assetsRouter = router({
       return { url, lqip };
     }),
 
+  // Removes the kyte's voice intro (asset row + column + stored object) and
+  // clears the draft projection. The asset id lives server-side — the draft
+  // only carries the URL — so removal goes through the kyte, not the asset id.
+  clearVoiceIntro: kyte
+    .input(z.object({ kyteId: z.string().min(1) }))
+    .output(okSchema)
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.config.capabilities.uploads) throw featureDisabled();
+      assertCan(ctx.access.effectiveRole, "upload_asset");
+      const removed = await ctx.store.takeKyteVoiceIntro(input.kyteId);
+      if (removed) {
+        await deleteObject(removed.key).catch(() => undefined);
+      }
+      const k = ctx.access.kyte!;
+      await ctx.store.updateDraft(input.kyteId, { ...k.draft, voiceIntro: null });
+      return { ok: true } as const;
+    }),
+
   delete: authed
     .input(z.object({ assetId: z.string().min(1) }))
     .output(okSchema)
@@ -218,13 +328,20 @@ export const assetsRouter = router({
       await assertNotSuspended(ctx.store, access);
 
       await deleteObject(asset.key).catch(() => undefined);
-      await deleteObject(buildLqipKey(asset.key)).catch(() => undefined);
+      // Only images have a lqip sidecar; audio has none.
+      if (asset.kind !== "VOICE_INTRO") {
+        await deleteObject(buildLqipKey(asset.key)).catch(() => undefined);
+      }
       await repo.removeAsset(input.assetId);
 
       const { url } = assetUrl(asset.key);
       if (access.kyte && asset.kind === "AVATAR" && access.kyte.draft.avatar?.url === url) {
         await ctx.store.setKyteAvatar(access.kyte.id, null);
         await ctx.store.updateDraft(access.kyte.id, { ...access.kyte.draft, avatar: null });
+      }
+      if (access.kyte && asset.kind === "VOICE_INTRO" && access.kyte.draft.voiceIntro?.url === url) {
+        await ctx.store.setKyteVoiceIntro(access.kyte.id, null);
+        await ctx.store.updateDraft(access.kyte.id, { ...access.kyte.draft, voiceIntro: null });
       }
 
       return { ok: true } as const;

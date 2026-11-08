@@ -26,6 +26,74 @@ const richContent: ProfileContent = {
   ],
 };
 
+describe("ProfileView soul blocks (about / now line / milestone / voice intro)", () => {
+  const soulContent: ProfileContent = {
+    ...emptyProfileContent(),
+    displayName: "Soul Seller",
+    about: "I make things by hand.",
+    nowLine: { text: "This week I'm finishing the drop.", updatedAt: "2026-11-08T12:00:00.000Z" },
+    milestone: { goal: 100, label: "supporters" },
+    voiceIntro: { url: "https://cdn.example.com/u/k_1/voice/01hq.mp3" },
+  };
+
+  it("renders the about block above the links when set, and nothing when absent", () => {
+    const html = renderToStaticMarkup(<ProfileView content={soulContent} />);
+    expect(html).toContain("I make things by hand.");
+    expect(html.indexOf("I make things by hand.")).toBeLessThan(html.indexOf("data-kytelink-links"));
+
+    const bare = renderToStaticMarkup(<ProfileView content={emptyProfileContent()} />);
+    expect(bare).not.toContain("I make things by hand.");
+  });
+
+  it("renders the now line with the date it was written", () => {
+    const html = renderToStaticMarkup(<ProfileView content={soulContent} />);
+    // React escapes the apostrophe in "I'm" as &#x27; in static markup, so
+    // assert on the apostrophe-free part of the line.
+    expect(html).toContain("finishing the drop");
+    expect(html).toContain("Written");
+    expect(html).toContain("2026");
+  });
+
+  it("renders the milestone meter from the real supporter count", () => {
+    const html = renderToStaticMarkup(<ProfileView content={soulContent} supporterCount={0} />);
+    expect(html).toContain("Help me reach 100 supporters");
+    expect(html).toContain("0 of 100 supporters so far");
+    expect(html).toContain('role="progressbar"');
+    expect(html).toContain('aria-valuenow="0"');
+    expect(html).toContain('aria-valuemax="100"');
+  });
+
+  it("renders the goal-reached state when the count meets the goal", () => {
+    const html = renderToStaticMarkup(<ProfileView content={soulContent} supporterCount={100} />);
+    expect(html).toContain("Goal reached");
+    expect(html).toContain("100 supporters! Thank you.");
+  });
+
+  it("does not render a milestone meter when no supporter count is passed", () => {
+    const html = renderToStaticMarkup(<ProfileView content={soulContent} />);
+    expect(html).not.toContain("Help me reach 100 supporters");
+    expect(html).not.toContain("of 100 supporters so far");
+  });
+
+  it("renders the voice intro as a play button with the clip, never auto-playing", () => {
+    const html = renderToStaticMarkup(<ProfileView content={soulContent} />);
+    expect(html).toContain('data-freetree-voice-intro');
+    expect(html).toContain("Hear my intro");
+    expect(html).toContain("https://cdn.example.com/u/k_1/voice/01hq.mp3");
+    expect(html).not.toContain("autoplay");
+    expect(html).toContain('aria-label="Play Soul Seller');
+  });
+
+  it("renders no voice intro button when there is no clip", () => {
+    const html = renderToStaticMarkup(
+      <ProfileView content={{ ...soulContent, voiceIntro: null }} />,
+    );
+    expect(html).not.toContain("data-freetree-voice-intro");
+    expect(html).not.toContain("Hear my intro");
+    expect(html).not.toContain("voice/01hq.mp3");
+  });
+});
+
 describe("ProfileView across all 12 themes", () => {
   for (const theme of THEME_KEYS) {
     it(`renders the ${theme} theme without throwing and with key elements`, () => {

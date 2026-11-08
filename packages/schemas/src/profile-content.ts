@@ -7,6 +7,10 @@ import {
   scheduledBlockSchema,
 } from "./scheduled-block";
 import { tipJarSchema } from "./tip-jar";
+import { aboutSchema } from "./about";
+import { nowLineSchema } from "./now-line";
+import { milestoneSchema } from "./milestone";
+import { voiceIntroSchema } from "./voice-intro";
 import { iconSchema } from "./icon";
 import { themeKeySchema } from "./themes";
 import { fontKeySchema } from "./fonts";
@@ -70,7 +74,20 @@ export const profileContentSchema = z.object({
   // Tip jar ("leave a tip" block). null = no tip jar on this profile.
   // Stored profiles predate the tip jar, so absent = null.
   tipJar: tipJarSchema.nullable().default(null),
+  // About / story block: a few "who I am" lines at the top of the profile,
+  // above the links. The photo is the avatar (Design tab). Null = no block.
+  // Stored profiles predate the about block, so absent = null.
+  about: aboutSchema.nullable().default(null),
+  // Now line: what the seller is up to this week + the date it was written.
+  // Null = no now line.
+  nowLine: nowLineSchema.nullable().default(null),
+  // Milestone meter: the goal only. The count is computed at read time from
+  // completed purchases — never stored, never seller-typed. Null = no meter.
+  milestone: milestoneSchema.nullable().default(null),
   avatar: avatarSchema,
+  // Voice intro: a short recorded clip, play button under the photo.
+  // Projection of the voiceIntroAssetId column + its Asset row, like avatar.
+  voiceIntro: voiceIntroSchema.nullable().default(null),
 });
 
 export type ProfileContent = z.infer<typeof profileContentSchema>;
@@ -102,7 +119,11 @@ export const PROFILE_CONTENT_FIELD_TO_COLUMN = {
   scheduledBlocks: "scheduledBlocks",
   liveBadge: "liveBadge",
   tipJar: "tipJar",
+  about: "about",
+  nowLine: "nowLine",
+  milestone: "milestone",
   avatar: "avatarAssetId",
+  voiceIntro: "voiceIntroAssetId",
 } as const satisfies Record<keyof ProfileContent, string>;
 
 export type ProfileContentColumn =
@@ -131,6 +152,10 @@ export function emptyProfileContent(): ProfileContent {
     scheduledBlocks: [],
     liveBadge: null,
     tipJar: null,
+    about: null,
+    nowLine: null,
+    milestone: null,
     avatar: null,
+    voiceIntro: null,
   };
 }

@@ -93,6 +93,7 @@ export function createRealClient(getCurrentUserId: () => string): ApiClient {
             updatedAt: k.updatedAt,
             draft: k.draft,
             publishedContent: k.publishedContent,
+            supporterCount: k.supporterCount,
             schedules: k.schedules.map((s) => ({
               id: s.id,
               kyteId: k.id,
@@ -239,6 +240,7 @@ export function createRealClient(getCurrentUserId: () => string): ApiClient {
       createUploadUrl: ({ kyteId, kind, contentType, sizeBytes }) =>
         run(() => c.assets.createUploadUrl.mutate({ kyteId, kind, contentType, sizeBytes })),
       finalize: ({ assetId }) => run(() => c.assets.finalize.mutate({ assetId })),
+      clearVoiceIntro: ({ kyteId }) => run(() => c.assets.clearVoiceIntro.mutate({ kyteId })),
     },
 
     analytics: {

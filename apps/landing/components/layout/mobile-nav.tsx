@@ -42,9 +42,14 @@ export function MobileNav() {
               className="flex items-center gap-2.5 outline-none"
               aria-label="FreeTree"
             >
-              <span className="text-[22px] leading-none" aria-hidden="true">
-                🪁
-              </span>
+              <img
+                src="/freetree-logo.png"
+                alt=""
+                width={28}
+                height={28}
+                className="rounded-md"
+                aria-hidden="true"
+              />
             </Link>
             <button
               type="button"

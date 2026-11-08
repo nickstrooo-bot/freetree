@@ -62,6 +62,8 @@ export interface KyteGet {
   draft: ProfileContent;
   publishedContent: ProfileContent | null;
   schedules: ScheduleSummary[];
+  /** Completed purchases (product sales + tips) — the milestone meter's number. */
+  supporterCount: number;
 }
 
 export interface DomainRecord {

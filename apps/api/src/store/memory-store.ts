@@ -234,6 +234,16 @@ export class MemoryStore implements Store {
   // asset-id column has no separate meaning here.
   async setKyteAvatar(): Promise<void> {}
 
+  async setKyteVoiceIntro(): Promise<void> {}
+
+  async takeKyteVoiceIntro(): Promise<null> {
+    return null;
+  }
+
+  async countCompletedPurchases(): Promise<number> {
+    return 0;
+  }
+
   async publishKyte(input: { kyteId: string; actorUserId: string }): Promise<PublishResult> {
     const kyte = this.kytes.find((k) => k.id === input.kyteId);
     if (!kyte) throw new Error("kyte not found");

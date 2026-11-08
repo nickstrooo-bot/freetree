@@ -1,8 +1,9 @@
 import type { AssetKind } from "@kytelink/schemas";
 
-const KIND_FOLDER: Record<Extract<AssetKind, "AVATAR" | "LINK_IMAGE">, string> = {
+const KIND_FOLDER: Record<Extract<AssetKind, "AVATAR" | "LINK_IMAGE" | "VOICE_INTRO">, string> = {
   AVATAR: "avatar",
   LINK_IMAGE: "links",
+  VOICE_INTRO: "voice",
 };
 
 export function buildRawUploadKey(kyteId: string, assetId: string): string {
@@ -11,7 +12,7 @@ export function buildRawUploadKey(kyteId: string, assetId: string): string {
 
 export function buildAssetKey(
   kyteId: string,
-  kind: "AVATAR" | "LINK_IMAGE",
+  kind: "AVATAR" | "LINK_IMAGE" | "VOICE_INTRO",
   ulid: string,
   ext: string,
 ): string {

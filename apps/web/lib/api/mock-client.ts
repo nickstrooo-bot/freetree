@@ -266,6 +266,7 @@ export function createMockClient(getCurrentUserId: () => string): ApiClient {
           updatedAt: kyte.updatedAt,
           draft: kyte.draft,
           publishedContent: kyte.publishedContent,
+          supporterCount: 0,
           schedules: store()
             .schedules.filter((s) => s.kyteId === kyteId)
             .map(scheduleSummary),
@@ -745,6 +746,9 @@ export function createMockClient(getCurrentUserId: () => string): ApiClient {
           url: `u/mock/${assetId}.webp`,
           lqip: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Crect width='8' height='8' fill='%23cbd5e0'/%3E%3C/svg%3E",
         };
+      },
+      async clearVoiceIntro() {
+        return { ok: true };
       },
     },
 

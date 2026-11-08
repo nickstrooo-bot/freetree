@@ -10,6 +10,8 @@ export interface PublishedProfileResult {
   ogImageUrl: string | null;
   suspensionReason: string | null;
   publishedAt: string | null;
+  /** Completed purchases (product sales + tips) — the milestone meter's number. */
+  supporterCount: number;
 }
 
 // The frozen internal payload (07-analytics / 06-api): profiles resolve to
@@ -26,6 +28,7 @@ interface InternalProfilePayload {
   kyteId?: string;
   ogImageUrl?: string | null;
   publishedAt?: string | null;
+  supporterCount?: number;
 }
 
 const MISS: PublishedProfileResult = {
@@ -35,12 +38,13 @@ const MISS: PublishedProfileResult = {
   ogImageUrl: null,
   suspensionReason: null,
   publishedAt: null,
+  supporterCount: 0,
 };
 
 export async function fetchPublishedProfile(username: string): Promise<PublishedProfileResult> {
   if (isMockApi()) {
     const { content, status, kyteId, suspensionReason } = mockProfileByUsername(username);
-    return { status, content, kyteId, ogImageUrl: null, suspensionReason, publishedAt: null };
+    return { status, content, kyteId, ogImageUrl: null, suspensionReason, publishedAt: null, supporterCount: 0 };
   }
 
   const response = await signedInternalGet(`/internal/profiles/${encodeURIComponent(username)}`);
@@ -54,5 +58,7 @@ export async function fetchPublishedProfile(username: string): Promise<Published
     ogImageUrl: data.ogImageUrl ?? null,
     suspensionReason: data.suspensionReason ?? null,
     publishedAt: data.publishedAt ?? null,
+    // Payloads cached before the milestone meter shipped carry no count.
+    supporterCount: data.supporterCount ?? 0,
   };
 }

@@ -228,6 +228,13 @@ export interface Store {
   createKyte(input: { orgId: string; actorUserId: string }): Promise<{ kyteId: string }>;
   updateDraft(kyteId: string, content: ProfileContent): Promise<{ updatedAt: Date }>;
   setKyteAvatar(kyteId: string, assetId: string | null): Promise<void>;
+  setKyteVoiceIntro(kyteId: string, assetId: string | null): Promise<void>;
+  /** Removes the kyte's voice intro asset (row + column) and returns the
+   * removed asset so the caller can delete the stored object. Null = none. */
+  takeKyteVoiceIntro(kyteId: string): Promise<StoredAsset | null>;
+  /** Completed purchases (product sales + tips) for a kyte — the milestone
+   * meter's count. Pending and refunded purchases never count. */
+  countCompletedPurchases(kyteId: string): Promise<number>;
   publishKyte(input: {
     kyteId: string;
     actorUserId: string;

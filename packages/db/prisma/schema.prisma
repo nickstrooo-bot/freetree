@@ -67,6 +67,7 @@ enum AssetKind {
   AVATAR
   LINK_IMAGE
   OG_IMAGE
+  VOICE_INTRO
 }
 
 enum AppealKind {
@@ -187,7 +188,17 @@ model Kyte {
   // Tip jar config ("leave a tip" block), mirrored from profileContent.
   // Null = no tip jar on this profile.
   tipJar           Json?
+  // About / story block ("who I am"). Null = no about block. The photo is
+  // the avatar; there is no second photo column.
+  about            String?
+  // Now line ("what I'm up to this week") + the date it was written.
+  // Null = no now line.
+  nowLine          Json?
+  // Milestone meter goal. The count is computed at read time from completed
+  // purchases — never stored. Null = no milestone meter.
+  milestone        Json?
   avatarAssetId    String?
+  voiceIntroAssetId String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -230,7 +241,14 @@ model PublishedKyte {
   liveBadge          Json?
   // Tip jar config, mirrored from the draft at publish time. Null = none.
   tipJar           Json?
+  // About / story block, mirrored from the draft at publish time. Null = none.
+  about            String?
+  // Now line, mirrored from the draft at publish time. Null = none.
+  nowLine          Json?
+  // Milestone meter goal, mirrored from the draft at publish time. Null = none.
+  milestone        Json?
   avatarAssetId    String?
+  voiceIntroAssetId String?
   moderationStatus ModerationStatus @default(APPROVED)
   publishSeq       Int              @default(0)
   publishedAt      DateTime         @updatedAt

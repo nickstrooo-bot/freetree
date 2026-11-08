@@ -26,6 +26,7 @@ type PageProps =
       checkoutEnabled: boolean;
       emailCaptureBlock: PublicEmailCaptureBlock | null;
       formBlock: PublicFormBlock | null;
+      supporterCount: number;
     };
 
 export const getStaticPaths: GetStaticPaths = () => {
@@ -82,6 +83,7 @@ export const getStaticProps: GetStaticProps<PageProps> = async (context) => {
       checkoutEnabled,
       emailCaptureBlock,
       formBlock,
+      supporterCount: result.supporterCount,
     },
     revalidate: REVALIDATE_SECONDS,
   };
@@ -108,6 +110,7 @@ function ProfilePage(props: InferGetStaticPropsType<typeof getStaticProps>) {
         checkoutEnabled={props.checkoutEnabled}
         emailCaptureBlock={props.emailCaptureBlock}
         formBlock={props.formBlock}
+        supporterCount={props.supporterCount}
       />
     </>
   );

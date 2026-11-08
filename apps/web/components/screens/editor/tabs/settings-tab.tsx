@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
-import { prefixHttps } from "@kytelink/schemas";
+import { prefixHttps, VOICE_INTRO_MAX_SECONDS } from "@kytelink/schemas";
 import { useApp } from "../../../../lib/app-context";
 import { useEditor } from "../../../../lib/editor/editor-context";
 import { useUsernameAvailability } from "../../../../hooks/use-username-availability";
 import { sendEventBeacon } from "../../../../lib/beacons";
+import { uploadVoiceIntro } from "../../../../lib/upload/upload-voice-intro";
 import { DomainsSection } from "../domains-section";
 import { TextInput } from "../../../ui/text-input";
 import { Button } from "../../../ui/button";
@@ -21,7 +22,7 @@ import { Label } from "../../../ui/label";
 
 export function SettingsTab() {
   const router = useRouter();
-  const { api, toast, handleError } = useApp();
+  const { api, toast, handleError, capabilities } = useApp();
   const { kyte, draft, patchDraft, allows, refresh } = useEditor();
 
   const [username, setUsername] = useState(kyte.username ?? "");
@@ -32,6 +33,85 @@ export function SettingsTab() {
 
   const canChangeUsername = allows("change_username");
   const removalAttempt = username.trim().length === 0 && kyte.username !== null;
+  const readOnly = !allows("edit_draft");
+
+  // Soul features: local state while typing, committed on blur/Enter (same
+  // pattern as the username field) so the now-line date stamps the save, not
+  // every keystroke.
+  const [nowLineText, setNowLineText] = useState(draft.nowLine?.text ?? "");
+  const [milestoneGoal, setMilestoneGoal] = useState(
+    draft.milestone ? String(draft.milestone.goal) : "",
+  );
+  const [milestoneLabel, setMilestoneLabel] = useState(draft.milestone?.label ?? "");
+  const voiceInput = useRef<HTMLInputElement | null>(null);
+  const [voiceUploading, setVoiceUploading] = useState(false);
+  const [voiceProgress, setVoiceProgress] = useState(0);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setNowLineText(draft.nowLine?.text ?? "");
+  }, [draft.nowLine]);
+
+  useEffect(() => {
+    setMilestoneGoal(draft.milestone ? String(draft.milestone.goal) : "");
+    setMilestoneLabel(draft.milestone?.label ?? "");
+  }, [draft.milestone]);
+
+  function commitNowLine() {
+    if (readOnly) return;
+    const text = nowLineText.trim();
+    if (!text) {
+      if (draft.nowLine) patchDraft({ nowLine: null });
+      return;
+    }
+    if (draft.nowLine?.text === text) return;
+    patchDraft({ nowLine: { text, updatedAt: new Date().toISOString() } });
+  }
+
+  function commitMilestone() {
+    if (readOnly) return;
+    const goal = Math.round(Number(milestoneGoal));
+    if (!milestoneGoal.trim() || !Number.isFinite(goal) || goal < 1 || goal > 100_000) {
+      if (draft.milestone) patchDraft({ milestone: null });
+      return;
+    }
+    const label = milestoneLabel.trim() || undefined;
+    if (draft.milestone?.goal === goal && (draft.milestone?.label ?? undefined) === label) {
+      return;
+    }
+    patchDraft({ milestone: { goal, label } });
+  }
+
+  async function onVoiceFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || readOnly) return;
+    setVoiceError(null);
+    setVoiceUploading(true);
+    setVoiceProgress(0);
+    try {
+      const result = await uploadVoiceIntro(api, kyte.id, file, (pct) => setVoiceProgress(pct));
+      patchDraft({ voiceIntro: { url: result.url } });
+      toast("Voice intro saved to your draft. Publish to make it live.", "success");
+      await refresh();
+    } catch (error) {
+      setVoiceError(error instanceof Error ? error.message : "Upload failed.");
+    } finally {
+      setVoiceUploading(false);
+    }
+  }
+
+  async function removeVoiceIntro() {
+    if (readOnly) return;
+    try {
+      await api.assets.clearVoiceIntro({ kyteId: kyte.id });
+      patchDraft({ voiceIntro: null });
+      toast("Voice intro removed.", "success");
+      await refresh();
+    } catch (error) {
+      handleError(error);
+    }
+  }
 
   async function commitUsername() {
     const next = username.trim();
@@ -234,6 +314,169 @@ export function SettingsTab() {
               If YouTube blocks the check from the server, the badge just stays off —
               it never shows the wrong state.
             </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>About you</CardTitle>
+          <CardDescription>
+            A few lines about who you are, shown at the top of your page, above
+            your links. Your photo is the avatar from the Design tab.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <textarea
+            value={draft.about ?? ""}
+            disabled={readOnly}
+            onChange={(event) => patchDraft({ about: event.target.value || null })}
+            maxLength={1000}
+            rows={3}
+            className="w-full rounded-lg border px-3 py-2 text-sm"
+            placeholder="Who you are, what you make, why it matters…"
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Now line</CardTitle>
+          <CardDescription>
+            One short line about what you&apos;re up to this week. The date it
+            was written shows next to it, so a stale line is visibly stale.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-3">
+            <TextInput
+              placeholder="This week I'm finishing…"
+              value={nowLineText}
+              disabled={readOnly}
+              onChange={(event) => setNowLineText(event.target.value)}
+              onBlur={() => void commitNowLine()}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.currentTarget.blur();
+                  commitNowLine();
+                }
+              }}
+            />
+            {draft.nowLine ? (
+              <p className="text-xs text-muted-foreground">
+                Written{" "}
+                {new Date(draft.nowLine.updatedAt).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+                . Clear the line to remove it.
+              </p>
+            ) : null}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Milestone</CardTitle>
+          <CardDescription>
+            A goal bar on your page — “help me reach 100 supporters”. The
+            number counts itself from your completed sales and tips; you only
+            set the goal, never the count.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-3">
+              <TextInput
+                label="Goal"
+                type="number"
+                placeholder="100"
+                value={milestoneGoal}
+                disabled={readOnly}
+                onChange={(event) => setMilestoneGoal(event.target.value)}
+                onBlur={() => void commitMilestone()}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.currentTarget.blur();
+                    commitMilestone();
+                  }
+                }}
+              />
+              <TextInput
+                label="Label"
+                placeholder="supporters"
+                value={milestoneLabel}
+                disabled={readOnly}
+                onChange={(event) => setMilestoneLabel(event.target.value)}
+                onBlur={() => void commitMilestone()}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.currentTarget.blur();
+                    commitMilestone();
+                  }
+                }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              So far: {kyte.supporterCount} completed{" "}
+              {kyte.supporterCount === 1 ? "sale or tip" : "sales and tips"}. Clear
+              the goal to remove the meter.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Voice intro</CardTitle>
+          <CardDescription>
+            A short clip of you — 10 to 30 seconds, mp3 or m4a, max{" "}
+            {VOICE_INTRO_MAX_SECONDS} seconds. Visitors get a play button under
+            your photo. It never auto-plays.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-3">
+            {draft.voiceIntro ? (
+              <>
+                <audio controls preload="none" src={draft.voiceIntro.url} className="w-full" />
+                {!readOnly ? (
+                  <div>
+                    <Button variant="secondary" size="sm" onClick={() => void removeVoiceIntro()}>
+                      Remove voice intro
+                    </Button>
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+            {capabilities.uploads && !readOnly ? (
+              <>
+                <input
+                  ref={voiceInput}
+                  type="file"
+                  accept=".mp3,.m4a,audio/mpeg,audio/mp4"
+                  hidden
+                  onChange={(event) => void onVoiceFile(event)}
+                />
+                <div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={voiceUploading}
+                    onClick={() => voiceInput.current?.click()}
+                  >
+                    {voiceUploading
+                      ? `Uploading… ${voiceProgress}%`
+                      : draft.voiceIntro
+                        ? "Replace voice intro"
+                        : "Upload a voice intro"}
+                  </Button>
+                </div>
+              </>
+            ) : null}
+            {voiceError ? <p className="text-sm text-red-600">{voiceError}</p> : null}
           </div>
         </CardContent>
       </Card>

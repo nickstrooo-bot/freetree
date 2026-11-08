@@ -33,6 +33,16 @@ export const assetsRouter = router({
       throw notImplemented("assets.finalize");
     }),
 
+  // Removes the kyte's live voice intro (the VOICE_INTRO Asset row + the
+  // voiceIntroAssetId column) so the seller can record a new one or go
+  // without. No-op when there is no voice intro.
+  clearVoiceIntro: kyteProcedure
+    .input(z.object({ kyteId: z.string().min(1) }))
+    .output(okSchema)
+    .mutation(() => {
+      throw notImplemented("assets.clearVoiceIntro");
+    }),
+
   delete: kyteProcedure
     .input(z.object({ assetId: z.string().min(1) }))
     .output(okSchema)

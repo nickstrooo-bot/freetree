@@ -3,7 +3,10 @@ import {
   profileContentSchema,
   type ThemeKey,
   themeKeySchema,
+  aboutSchema,
   liveBadgeSchema,
+  milestoneSchema,
+  nowLineSchema,
   scheduledBlockSchema,
   tipJarSchema,
 } from "@kytelink/schemas";
@@ -27,6 +30,9 @@ interface ContentColumns {
   scheduledBlocks: unknown;
   liveBadge: unknown;
   tipJar: unknown;
+  about: unknown;
+  nowLine: unknown;
+  milestone: unknown;
 }
 
 function safeTheme(theme: string): ThemeKey {
@@ -43,6 +49,13 @@ export function columnsToContent(row: ContentColumns): ProfileContent {
   const scheduledParsed = scheduledBlockSchema.array().safeParse(row.scheduledBlocks);
   // And for the live badge: malformed stored config means no badge.
   const liveBadgeParsed = liveBadgeSchema.safeParse(row.liveBadge);
+  // Same guard for the soul blocks: a malformed stored value drops just that
+  // block, never the whole profile. (about is a TEXT column so it can only
+  // ever be a string or null, but a row written outside the editor could
+  // still exceed the length cap — guard it the same way.)
+  const aboutParsed = aboutSchema.nullable().safeParse(row.about);
+  const nowLineParsed = nowLineSchema.safeParse(row.nowLine);
+  const milestoneParsed = milestoneSchema.safeParse(row.milestone);
   const candidate = {
     displayName: row.displayName,
     description: row.description,
@@ -61,7 +74,13 @@ export function columnsToContent(row: ContentColumns): ProfileContent {
     scheduledBlocks: scheduledParsed.success ? scheduledParsed.data : [],
     liveBadge: liveBadgeParsed.success ? liveBadgeParsed.data : null,
     tipJar: tipJarParsed.success ? tipJarParsed.data : null,
+    about: aboutParsed.success ? aboutParsed.data : null,
+    nowLine: nowLineParsed.success ? nowLineParsed.data : null,
+    milestone: milestoneParsed.success ? milestoneParsed.data : null,
     avatar: null,
+    // Voice intro is a projection (voiceIntroAssetId column + Asset row),
+    // resolved by the caller like avatar — never carried in the row itself.
+    voiceIntro: null,
   };
   const parsed = profileContentSchema.safeParse(candidate);
   return parsed.success ? parsed.data : profileContentSchema.parse({ ...candidate, links: [], icons: [] });
@@ -85,6 +104,9 @@ export function contentToColumns(content: ProfileContent): {
   scheduledBlocks: ProfileContent["scheduledBlocks"];
   liveBadge: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
   tipJar: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
+  about: string | null;
+  nowLine: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
+  milestone: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
 } {
   return {
     displayName: content.displayName,
@@ -104,5 +126,8 @@ export function contentToColumns(content: ProfileContent): {
     scheduledBlocks: content.scheduledBlocks,
     liveBadge: content.liveBadge ?? Prisma.JsonNull,
     tipJar: content.tipJar ?? Prisma.JsonNull,
+    about: content.about,
+    nowLine: content.nowLine ?? Prisma.JsonNull,
+    milestone: content.milestone ?? Prisma.JsonNull,
   };
 }

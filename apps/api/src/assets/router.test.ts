@@ -243,6 +243,143 @@ describe("feature gate (uploads capability off)", () => {
   });
 });
 
+describe("voice intro (VOICE_INTRO)", () => {
+  // Minimal audio the server accepts: it only checks magic bytes, never
+  // decodes the clip (the 60s duration cap is enforced by the editor before
+  // upload; the 5MB size cap is the server backstop).
+  function testMp3(): Uint8Array {
+    const header = new Uint8Array([0x49, 0x44, 0x33, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+    const payload = new Uint8Array(1024).fill(0xff);
+    const out = new Uint8Array(header.length + payload.length);
+    out.set(header);
+    out.set(payload, header.length);
+    return out;
+  }
+
+  function testM4a(): Uint8Array {
+    const header = new TextEncoder().encode("0000ftypisom");
+    const payload = new Uint8Array(512).fill(0x00);
+    const out = new Uint8Array(header.length + payload.length);
+    out.set(header);
+    out.set(payload, header.length);
+    return out;
+  }
+
+  it("rejects an image mime for a voice intro", async () => {
+    const caller = createCaller(contextFor(store, "usr_agent", "agent@kytelink.dev"));
+    // A plain TRPCError (not an AppError), so assert on its code property —
+    // appCodeOf only reads AppError codes.
+    await expect(
+      caller.createUploadUrl({
+        kyteId: "usr_agent",
+        kind: "VOICE_INTRO",
+        contentType: "image/png",
+        sizeBytes: 100,
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("rejects a voice clip over the 5MB cap", async () => {
+    const caller = createCaller(contextFor(store, "usr_agent", "agent@kytelink.dev"));
+    const error = await caller
+      .createUploadUrl({
+        kyteId: "usr_agent",
+        kind: "VOICE_INTRO",
+        contentType: "audio/mpeg",
+        sizeBytes: 5 * 1024 * 1024 + 1,
+      })
+      .then(() => null)
+      .catch((e: unknown) => e);
+    expect(appCodeOf(error)).toBe("LIMIT_REACHED");
+  });
+
+  it("uploads an mp3, stores it under u/{kyteId}/voice/, and sets the draft voice intro", async () => {
+    const caller = createCaller(contextFor(store, "usr_agent", "agent@kytelink.dev"));
+    const mp3 = testMp3();
+
+    const { assetId, uploadUrl, key } = await caller.createUploadUrl({
+      kyteId: "usr_agent",
+      kind: "VOICE_INTRO",
+      contentType: "audio/mpeg",
+      sizeBytes: mp3.byteLength,
+    });
+    const putResponse = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "audio/mpeg" },
+      body: mp3,
+    });
+    expect(putResponse.ok).toBe(true);
+
+    const result = await caller.finalize({ assetId });
+    expect(result.url.startsWith(`${CDN}/u/usr_agent/voice/`)).toBe(true);
+    expect(result.url.endsWith(".mp3")).toBe(true);
+    expect(result.lqip).toBeNull();
+
+    const assetRow = await repositoryFor(store).getAsset(assetId);
+    expect(assetRow?.kind).toBe("VOICE_INTRO");
+    expect(assetRow?.sizeBytes).toBe(mp3.byteLength);
+
+    const kyte = await store.kyteById("usr_agent");
+    expect(kyte?.draft.voiceIntro?.url).toBe(result.url);
+
+    const rawStillThere = await headObject(key).catch(() => null);
+    expect(rawStillThere).toBeNull();
+  }, 30000);
+
+  it("uploads an m4a and keys it .m4a", async () => {
+    const caller = createCaller(contextFor(store, "usr_agent", "agent@kytelink.dev"));
+    const m4a = testM4a();
+
+    const { assetId, uploadUrl } = await caller.createUploadUrl({
+      kyteId: "usr_agent",
+      kind: "VOICE_INTRO",
+      contentType: "audio/mp4",
+      sizeBytes: m4a.byteLength,
+    });
+    await fetch(uploadUrl, { method: "PUT", headers: { "Content-Type": "audio/mp4" }, body: m4a });
+
+    const result = await caller.finalize({ assetId });
+    expect(result.url.startsWith(`${CDN}/u/usr_agent/voice/`)).toBe(true);
+    expect(result.url.endsWith(".m4a")).toBe(true);
+  }, 30000);
+
+  it("rejects a voice finalize whose bytes are not audio", async () => {
+    const caller = createCaller(contextFor(store, "usr_agent", "agent@kytelink.dev"));
+    const notAudio = new TextEncoder().encode("<html>totally not audio</html>");
+
+    const { assetId, uploadUrl } = await caller.createUploadUrl({
+      kyteId: "usr_agent",
+      kind: "VOICE_INTRO",
+      contentType: "audio/mpeg",
+      sizeBytes: notAudio.byteLength,
+    });
+    await fetch(uploadUrl, { method: "PUT", headers: { "Content-Type": "audio/mpeg" }, body: notAudio });
+
+    await expect(caller.finalize({ assetId })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(await repositoryFor(store).getAsset(assetId)).toBeUndefined();
+  }, 30000);
+
+  it("clearVoiceIntro removes the asset row and clears the draft voice intro", async () => {
+    const caller = createCaller(contextFor(store, "usr_agent", "agent@kytelink.dev"));
+    const mp3 = testMp3();
+    const { assetId, uploadUrl } = await caller.createUploadUrl({
+      kyteId: "usr_agent",
+      kind: "VOICE_INTRO",
+      contentType: "audio/mpeg",
+      sizeBytes: mp3.byteLength,
+    });
+    await fetch(uploadUrl, { method: "PUT", headers: { "Content-Type": "audio/mpeg" }, body: mp3 });
+    await caller.finalize({ assetId });
+
+    const cleared = await caller.clearVoiceIntro({ kyteId: "usr_agent" });
+    expect(cleared.ok).toBe(true);
+    expect(await repositoryFor(store).getAsset(assetId)).toBeUndefined();
+
+    const kyte = await store.kyteById("usr_agent");
+    expect(kyte?.draft.voiceIntro).toBeNull();
+  }, 30000);
+});
+
 describe("delete", () => {
   it("removes the object, the LQIP sibling, the Asset row, and clears the kyte avatar", async () => {
     const caller = createCaller(contextFor(store, "usr_agent", "agent@kytelink.dev"));

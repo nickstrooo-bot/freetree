@@ -37,6 +37,10 @@ const kyteGetOutput = z.object({
   draft: profileContentSchema,
   publishedContent: profileContentSchema.nullable(),
   schedules: z.array(scheduleSummarySchema),
+  // Completed purchases (product sales + tips) for this kyte — the milestone
+  // meter's number, so the editor preview renders the real count. Never
+  // seller-typed, never stored.
+  supporterCount: z.number().int().nonnegative(),
 });
 
 export const kyteRouter = router({
@@ -70,6 +74,7 @@ export const kyteRouter = router({
         draft: k.draft,
         publishedContent: k.published,
         schedules,
+        supporterCount: await ctx.store.countCompletedPurchases(k.id),
       };
     }),
 

@@ -26,6 +26,8 @@ export interface PublicProfileProps {
   checkoutEnabled?: boolean;
   emailCaptureBlock?: PublicEmailCaptureBlock | null;
   formBlock?: PublicFormBlock | null;
+  /** Completed purchases (product sales + tips) — the milestone meter's number. */
+  supporterCount?: number;
 }
 
 const QR_CONTAINER_ID = "freetree-public-qr";
@@ -75,6 +77,7 @@ export function PublicProfile({
   checkoutEnabled = false,
   emailCaptureBlock = null,
   formBlock = null,
+  supporterCount,
 }: PublicProfileProps) {
   const [qrOpen, setQrOpen] = useState(false);
   const [buyingProductId, setBuyingProductId] = useState<string | null>(null);
@@ -205,6 +208,7 @@ export function PublicProfile({
         onTip={onTip}
         tipping={tipping}
         liveBadge={liveStatus}
+        supporterCount={supporterCount}
       />
       {buyError ? (
         <div

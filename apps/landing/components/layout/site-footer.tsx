@@ -94,9 +94,14 @@ export function SiteFooter() {
               className="flex items-center gap-2.5 outline-none"
               aria-label="FreeTree"
             >
-              <span className="text-xl leading-none" aria-hidden="true">
-                🪁
-              </span>
+              <img
+                src="/freetree-logo.png"
+                alt=""
+                width={24}
+                height={24}
+                className="rounded-md"
+                aria-hidden="true"
+              />
               <span className="text-ink text-[15px] font-semibold">kytelink</span>
             </Link>
             <p className="text-tertiary mt-3.5 max-w-[220px] text-[13px] leading-relaxed">

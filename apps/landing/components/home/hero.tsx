@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Container } from "../ui/container";
@@ -12,6 +13,53 @@ const BLURBS = [
   { icon: "📈", title: "Detailed analytics", body: "A full year of page views and link clicks, private to you." },
   { icon: "🛒", title: "Sell & keep 96%", body: "Digital products with checkout built in. We keep 4% — that's it." },
 ];
+
+// FreeTree's own intro (Atlas, 22s): a play button under the hero CTAs.
+// Tap to play, never auto-play (no autoPlay attribute, preload="none" — the
+// clip is fetched only when a visitor taps).
+function SiteIntroAudio() {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+
+  async function toggle() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
+      setPlaying(false);
+      return;
+    }
+    try {
+      await audio.play();
+      setPlaying(true);
+    } catch {
+      setPlaying(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 flex justify-center">
+      <audio
+        ref={audioRef}
+        src="/atlas-freetree-intro.mp3"
+        preload="none"
+        onEnded={() => setPlaying(false)}
+      />
+      <button
+        type="button"
+        onClick={toggle}
+        aria-pressed={playing}
+        aria-label={
+          playing ? "Pause the FreeTree intro" : "Play the FreeTree intro (22 seconds)"
+        }
+        className="btn-metal-ghost inline-flex cursor-pointer items-center justify-center gap-2 rounded-pill px-5 py-2.5 text-sm font-medium outline-none"
+      >
+        <span aria-hidden="true">{playing ? "❚❚" : "▶"}</span>
+        {playing ? "Pause the intro" : "Hear what FreeTree is about (22s)"}
+      </button>
+    </div>
+  );
+}
 
 export function Hero() {
   return (
@@ -48,6 +96,7 @@ export function Hero() {
         <div className="mt-5 text-[13px] text-faint">
           getfreetree.com/<span className="text-ink">yourname</span> — claimed in 30 seconds
         </div>
+        <SiteIntroAudio />
       </div>
 
       {/* The walkaway — Nick's hero image, full-bleed and proud */}

@@ -75,9 +75,14 @@ export function EditorHeader({ onSwitchKyte }: EditorHeaderProps) {
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-hairline bg-card px-4 sm:px-6 lg:px-8">
       <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         <Link href="/home" className="flex shrink-0 items-center" aria-label="FreeTree">
-          <span className="text-[22px] leading-none" aria-hidden>
-            🪁
-          </span>
+          <img
+            src="/freetree-logo.png"
+            alt=""
+            width={28}
+            height={28}
+            className="rounded-md"
+            aria-hidden="true"
+          />
         </Link>
         <span className="shrink-0 text-base font-light text-border" aria-hidden>
           /

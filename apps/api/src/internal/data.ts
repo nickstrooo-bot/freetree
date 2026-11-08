@@ -35,6 +35,11 @@ export interface ProfilePayload {
   suspensionReason: string | null;
   ogImageUrl: string | null;
   publishedAt: string;
+  // Completed purchases (product sales + tips) for this kyte — the milestone
+  // meter's number. Computed at read time, never stored; cached with the
+  // profile for up to PROFILE_TTL seconds, so it can lag a fresh sale by
+  // at most 5 minutes.
+  supporterCount: number;
 }
 
 // ProfileContent.avatar is a projection of the avatarAssetId column + its
@@ -47,6 +52,27 @@ async function resolveAvatar(avatarAssetId: string | null): Promise<ProfileConte
   });
   if (!asset) return null;
   return { url: getCdnUrl(asset.key), lqip: getLqipUrl(asset.key) };
+}
+
+// ProfileContent.voiceIntro is a projection of the voiceIntroAssetId column +
+// its Asset row — same pattern as avatar. An audio clip has no lqip.
+async function resolveVoiceIntro(
+  voiceIntroAssetId: string | null,
+): Promise<ProfileContent["voiceIntro"]> {
+  if (!voiceIntroAssetId) return null;
+  const asset = await getDb().asset.findUnique({
+    where: { id: voiceIntroAssetId },
+    select: { key: true },
+  });
+  if (!asset) return null;
+  return { url: getCdnUrl(asset.key) };
+}
+
+// The milestone meter's number: completed purchases only. Tips are Purchases
+// too (joined to the kyte's hidden tip Product), so one count covers product
+// sales + tips. Pending and refunded purchases never count.
+async function countSupporters(kyteId: string): Promise<number> {
+  return getDb().purchase.count({ where: { kyteId, status: "completed" } });
 }
 
 // The kyte's own verdict wins: it is the most specific thing recorded about
@@ -105,6 +131,7 @@ export async function resolveProfile(username: string): Promise<ProfilePayload |
   const content: ProfileContent = {
     ...columnsToContent(pub),
     avatar: await resolveAvatar(pub.avatarAssetId),
+    voiceIntro: await resolveVoiceIntro(pub.voiceIntroAssetId),
   };
   if (suspended || (await redirectsToOwnDomain(pub.kyteId, content))) {
     content.shouldRedirect = false;
@@ -118,6 +145,7 @@ export async function resolveProfile(username: string): Promise<ProfilePayload |
     suspensionReason: suspended ? await suspensionReasonOf(pub.kyteId, org) : null,
     ogImageUrl: ogAsset ? getCdnUrl(ogAsset.key) : null,
     publishedAt: pub.publishedAt.toISOString(),
+    supporterCount: await countSupporters(pub.kyteId),
   };
   await redis.set(key, JSON.stringify(payload), "EX", PROFILE_TTL);
   return payload;
@@ -222,6 +250,7 @@ export async function resolvePreview(token: string, passcode: string): Promise<P
     content: {
       ...columnsToContent(preview.kyte),
       avatar: await resolveAvatar(preview.kyte.avatarAssetId),
+      voiceIntro: await resolveVoiceIntro(preview.kyte.voiceIntroAssetId),
     },
     username: preview.kyte.username,
   };
