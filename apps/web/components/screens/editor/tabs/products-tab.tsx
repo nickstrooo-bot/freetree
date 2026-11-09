@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useEditor } from "../../../../lib/editor/editor-context";
 import { useApp } from "../../../../lib/app-context";
 import type {
@@ -88,6 +88,24 @@ export function ProductsTab() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // After returning from Stripe's hosted onboarding, say so plainly and clear
+  // the ?stripe= flag so a refresh doesn't repeat the message. The status
+  // above is already re-fetched on mount, so this is confirmation only.
+  const stripeReturnHandled = useRef(false);
+  useEffect(() => {
+    if (stripeReturnHandled.current) return;
+    stripeReturnHandled.current = true;
+    const flag = new URLSearchParams(window.location.search).get("stripe");
+    if (flag === "done") {
+      toast("Welcome back — checking your Stripe status…", "success");
+    } else if (flag === "refresh") {
+      toast("Let's finish your Stripe setup — pick up where you left off.", "default");
+    }
+    if (flag) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, [toast]);
 
   async function handleConnectStripe() {
     try {
@@ -280,12 +298,7 @@ export function ProductsTab() {
           <p className="mt-2 text-sm text-muted-foreground">
             Payments aren't configured on this FreeTree yet. Selling will be available soon.
           </p>
-        ) : connect.connected && connect.chargesEnabled ? (
-          <p className="mt-2 text-sm text-green-700">
-            ✓ Stripe connected — you're ready to sell. FreeTree takes 4% of what's left
-            after Stripe's fee.
-          </p>
-        ) : (
+        ) : !connect.connected ? (
           <>
             <p className="mt-2 text-sm text-muted-foreground">
               Connect your Stripe account to start selling. FreeTree takes 4% of what's
@@ -302,6 +315,74 @@ export function ProductsTab() {
                 Connect Stripe
               </button>
             )}
+          </>
+        ) : (
+          <>
+            {/* Status checklist — sellers check readiness here in FreeTree,
+                not by opening the Stripe dashboard. */}
+            <ul className="mt-3 flex flex-col gap-1.5 text-sm">
+              <li>
+                <span className="text-green-700">✓</span> Stripe account connected
+              </li>
+              <li>
+                {connect.chargesEnabled ? (
+                  <>
+                    <span className="text-green-700">✓</span> Ready to take payments
+                  </>
+                ) : (
+                  <>
+                    <span className="text-amber-600">…</span> Ready to take payments — Stripe is
+                    still checking your details
+                  </>
+                )}
+              </li>
+              <li>
+                {connect.payoutsEnabled ? (
+                  <>
+                    <span className="text-green-700">✓</span> Payouts set up
+                  </>
+                ) : (
+                  <>
+                    <span className="text-amber-600">…</span> Payouts — add your bank details in
+                    Stripe to get paid
+                  </>
+                )}
+              </li>
+            </ul>
+            {connect.chargesEnabled ? (
+              <p className="mt-2 text-sm text-green-700">
+                ✓ You're ready to sell. FreeTree takes 4% of what's left after Stripe's fee.
+              </p>
+            ) : (
+              <>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  You're connected. Stripe is still checking your details — this usually
+                  takes a few minutes. If Stripe needs anything else, pick up where you left
+                  off below.
+                </p>
+                {!readOnly && (
+                  <button
+                    type="button"
+                    onClick={handleConnectStripe}
+                    className="mt-3 inline-flex h-10 items-center gap-2 rounded-lg bg-[#1B4332] px-4 text-sm font-semibold text-[#FDF8F0] hover:opacity-90"
+                  >
+                    <ExternalLink className="size-4" />
+                    Continue Stripe setup
+                  </button>
+                )}
+              </>
+            )}
+            {/* Payouts live in Stripe — deep-link straight to the payouts page,
+                not the dashboard home, so sellers never have to hunt for it. */}
+            <a
+              href="https://dashboard.stripe.com/payouts"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[#1B4332] underline underline-offset-2 hover:opacity-80"
+            >
+              {connect.payoutsEnabled ? "View payouts in Stripe" : "Set up payouts in Stripe"}
+              <ExternalLink className="size-3.5" />
+            </a>
           </>
         )}
         <p className="mt-2 text-xs text-muted-foreground">

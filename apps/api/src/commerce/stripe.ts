@@ -185,7 +185,9 @@ export async function createCheckoutSession(
   const session = await stripe.checkout.sessions.create(
     {
       mode: "payment",
-      payment_method_types: ["card"],
+      // NOTE: no `payment_method_types` — Stripe rejects that parameter now
+      // ("no longer supported"); Checkout uses dynamic payment methods from
+      // the account's Dashboard settings instead (card is on by default).
       line_items: [
         {
           price_data: {
