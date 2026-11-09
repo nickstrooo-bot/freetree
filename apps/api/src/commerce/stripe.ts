@@ -84,7 +84,8 @@ export async function getOrCreateConnectAccount(
     // $2/mo per active account, which loses money on sellers under ~$50/mo.
     // Standard sellers get the full Stripe dashboard; onboarding link below
     // still works the same.
-    type: "standard",
+    // NOTE: no `type` field — Stripe rejects the legacy `type` field on
+    // managed-risk platforms (v1 create defaults to Standard).
     email,
     metadata: { freetree_org_id: orgId },
     capabilities: {
